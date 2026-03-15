@@ -1,0 +1,19 @@
+# ─────────────────────────────────────────────────────────────────
+# auth-service specific config — overrides shared application.yml
+# ─────────────────────────────────────────────────────────────────
+
+spring:
+  data:
+    mongodb:
+      database: auth_db
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY:blinkit-dev-secret-key-minimum-32-chars!!}
+  expiry-minutes: ${JWT_EXPIRY_TIME_IN_MINUTE:15}
+  refresh-expiry-days: ${JWT_REFRESH_EXPIRY_DAYS:30}
+
+otp:
+  expiry-minutes: 5
+
+password-reset:
+  expiry-minutes: 15

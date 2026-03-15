@@ -1,0 +1,114 @@
+# ─── Use this during development ──────────────────────────────────
+# Starts only infrastructure (Kafka, Redis) with browser UIs.
+# Run Spring Boot services from IntelliJ for faster dev loop.
+#
+# Usage:
+#   docker compose -f docker-compose.infra.yml up -d
+# ──────────────────────────────────────────────────────────────────
+
+networks:
+  blinkit-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  kafka-data:
+  zookeeper-data:
+
+services:
+
+  # ── Zookeeper (required by Kafka) ───────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: blinkit-zookeeper
+    networks: [blinkit-network]
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Kafka Broker ─────────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: blinkit-kafka
+    networks: [blinkit-network]
+    ports:
+      - "9092:9092"           # host machine uses localhost:9092
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # PLAINTEXT_HOST → host machine access (localhost:9092)
+      # PLAINTEXT       → inter-container access (kafka:29092)
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  # ── Kafka UI ──────────────────────────────────────────────────────
+  # Browse topics, messages, consumer groups at localhost:9093
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: blinkit-kafka-ui
+    networks: [blinkit-network]
+    ports:
+      - "9093:8080"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: blinkit-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+  # ── Redis ─────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: blinkit-redis
+    networks: [blinkit-network]
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --requirepass localpassword
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "localpassword", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis Commander UI ────────────────────────────────────────────
+  # Browse Redis keys visually at localhost:9191
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: blinkit-redis-ui
+    networks: [blinkit-network]
+    ports:
+      - "9191:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:localpassword

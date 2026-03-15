@@ -1,0 +1,8 @@
+# ─────────────────────────────────────────────────────────────────
+# user-service specific config — overrides shared application.yml
+# ─────────────────────────────────────────────────────────────────
+
+spring:
+  data:
+    mongodb:
+      database: user_db

@@ -1,0 +1,28 @@
+# ─────────────────────────────────────────────────────────────────
+# notification-service specific config — overrides shared application.yml
+# ─────────────────────────────────────────────────────────────────
+
+spring:
+  data:
+    mongodb:
+      database: notification_db
+  kafka:
+    consumer:
+      group-id: notification-service-group
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+app:
+  password-reset-base-url: ${PASSWORD_RESET_BASE_URL:http://localhost:3000/reset-password}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info    # notification-service doesn't expose metrics

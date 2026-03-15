@@ -1,0 +1,29 @@
+# Environment / Secrets
+.env
+*.env
+.env.*
+
+# Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE
+.idea/
+*.iml
+*.iws
+.vscode/
+.claude/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes / local data
+mongodb-data/

@@ -1,0 +1,31 @@
+server:
+  port: 8888
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: config-server
+  profiles:
+    active: native            # 'native' = read config files from classpath/filesystem
+  cloud:
+    config:
+      enabled: false   # config-server is the server, not a client
+      server:
+        native:
+          # Config files location: src/main/resources/configs/
+          # Spring Cloud Config looks for: {application}.yml or application.yml (shared)
+          search-locations: classpath:/configs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
