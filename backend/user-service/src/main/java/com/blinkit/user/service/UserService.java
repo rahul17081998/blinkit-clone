@@ -30,10 +30,13 @@ public class UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
     }
 
-    public UserProfile updateProfile(String userId, UpdateProfileRequest req) {
+    public UserProfile updateProfile(String userId, String email, UpdateProfileRequest req) {
         UserProfile profile = profileRepo.findByUserId(userId)
-                .orElseGet(() -> UserProfile.builder().userId(userId).build());
+                .orElseGet(() -> UserProfile.builder().userId(userId).email(email).build());
 
+        if (profile.getEmail() == null && email != null && !email.isBlank()) {
+            profile.setEmail(email);
+        }
         profile.setFirstName(req.getFirstName());
         profile.setLastName(req.getLastName());
         profile.setPhone(req.getPhone());

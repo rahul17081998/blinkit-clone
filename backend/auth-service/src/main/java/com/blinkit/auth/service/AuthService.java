@@ -118,6 +118,13 @@ public class AuthService {
     // ── Refresh token ─────────────────────────────────────────────
 
     public AuthResponse refresh(String userId, String refreshToken) {
+        if (userId == null || userId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId is required");
+        }
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "refreshToken is required");
+        }
+
         AuthUser user = userRepo.findByUserId(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
@@ -134,6 +141,7 @@ public class AuthService {
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
                 .userId(userId)
                 .email(user.getEmail())
                 .role(role)

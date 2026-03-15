@@ -37,8 +37,9 @@ public class UserController {
     @PutMapping("/profile")
     public ResponseEntity<ApiResponse<UserProfile>> updateProfile(
             @RequestHeader("X-User-Id") String userId,
+            @RequestHeader(value = "X-User-Email", required = false) String email,
             @Valid @RequestBody UpdateProfileRequest req) {
-        return ResponseEntity.ok(ApiResponse.ok("Profile updated", userService.updateProfile(userId, req)));
+        return ResponseEntity.ok(ApiResponse.ok("Profile updated", userService.updateProfile(userId, email, req)));
     }
 
     // ── Addresses ─────────────────────────────────────────────────

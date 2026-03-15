@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -35,6 +36,14 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     @Value("${jwt.secret-key}")
     private String secretKey;
+
+    private final ReactiveStringRedisTemplate redisTemplate;
+
+    public JwtAuthFilter(ReactiveStringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
+    private static final String BLACKLIST_PREFIX = "blacklist:";
 
     // Routes that do NOT require a JWT token
     private static final List<String> PUBLIC_PATHS = List.of(
@@ -67,24 +76,32 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         String token = authHeader.substring(7);
 
         // Step 3 — validate token and extract claims
+        Claims claims;
         try {
-            Claims claims = extractClaims(token);
-
-            String userId = claims.get("userId", String.class);
-            String role   = claims.get("role",   String.class);
-
-            // Step 4 — inject user context headers for downstream services
-            ServerWebExchange mutatedExchange = exchange.mutate()
-                    .request(r -> r
-                            .header("X-User-Id",   userId)
-                            .header("X-User-Role", role))
-                    .build();
-
-            return chain.filter(mutatedExchange);
-
+            claims = extractClaims(token);
         } catch (Exception e) {
             return unauthorised(exchange, "Invalid or expired token: " + e.getMessage());
         }
+
+        String userId = claims.get("userId", String.class);
+        String email  = claims.get("email",  String.class);
+        String role   = claims.get("role",   String.class);
+
+        // Step 4 — check token blacklist (set on logout)
+        return redisTemplate.hasKey(BLACKLIST_PREFIX + token)
+                .flatMap(blacklisted -> {
+                    if (Boolean.TRUE.equals(blacklisted)) {
+                        return unauthorised(exchange, "Token has been invalidated");
+                    }
+                    // Step 5 — inject user context headers for downstream services
+                    ServerWebExchange mutatedExchange = exchange.mutate()
+                            .request(r -> r
+                                    .header("X-User-Id",    userId)
+                                    .header("X-User-Role",  role)
+                                    .header("X-User-Email", email != null ? email : ""))
+                            .build();
+                    return chain.filter(mutatedExchange);
+                });
     }
 
     private Claims extractClaims(String token) {
