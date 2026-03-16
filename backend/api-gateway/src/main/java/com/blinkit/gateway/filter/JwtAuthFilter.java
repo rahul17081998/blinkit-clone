@@ -45,7 +45,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     private static final String BLACKLIST_PREFIX = "blacklist:";
 
-    // Routes that do NOT require a JWT token
+    // Routes that do NOT require a JWT token (any HTTP method)
     private static final List<String> PUBLIC_PATHS = List.of(
             "/api/auth/login",
             "/api/auth/signup",
@@ -53,9 +53,13 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             "/api/auth/verify",
             "/api/auth/forgot-password",
             "/api/auth/reset-password",
-            "/api/products",
-            "/api/categories",
             "/actuator"
+    );
+
+    // Routes that are public only for GET requests (catalog browsing)
+    private static final List<String> PUBLIC_GET_PATHS = List.of(
+            "/api/products",
+            "/api/categories"
     );
 
     @Override
@@ -63,7 +67,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         String path = exchange.getRequest().getURI().getPath();
 
         // Step 1 — skip auth for public routes
-        if (isPublicPath(path)) {
+        if (isPublicPath(path, exchange.getRequest().getMethod())) {
             return chain.filter(exchange);
         }
 
@@ -113,8 +117,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                 .getPayload();
     }
 
-    private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+    private boolean isPublicPath(String path, org.springframework.http.HttpMethod method) {
+        if (PUBLIC_PATHS.stream().anyMatch(path::startsWith)) return true;
+        if (org.springframework.http.HttpMethod.GET.equals(method) &&
+            PUBLIC_GET_PATHS.stream().anyMatch(path::startsWith)) return true;
+        return false;
     }
 
     private Mono<Void> unauthorised(ServerWebExchange exchange, String reason) {

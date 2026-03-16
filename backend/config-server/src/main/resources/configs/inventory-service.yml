@@ -1,0 +1,7 @@
+spring:
+  data:
+    mongodb:
+      database: inventory_db
+
+inventory:
+  low-stock-default-threshold: 10

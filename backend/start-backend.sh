@@ -88,6 +88,14 @@ wait_for_port "user-service" 8082
 start_service "notification-service" "$JAR_DIR/notification-service/target/notification-service-1.0.0-SNAPSHOT.jar"
 wait_for_port "notification-service" 8089
 
+# ── Step 7: Start Product Service ────────────────────────────────
+start_service "product-service" "$JAR_DIR/product-service/target/product-service-1.0.0-SNAPSHOT.jar"
+wait_for_port "product-service" 8083
+
+# ── Step 8: Start Inventory Service ──────────────────────────────
+start_service "inventory-service" "$JAR_DIR/inventory-service/target/inventory-service-1.0.0-SNAPSHOT.jar"
+wait_for_port "inventory-service" 8084
+
 # ── Done ─────────────────────────────────────────────────────────
 echo ""
 echo "✔  All services are UP"
@@ -98,6 +106,8 @@ echo "   API Gateway       →  http://localhost:8080/actuator/health"
 echo "   Auth Service      →  http://localhost:8081/swagger-ui.html"
 echo "   User Service      →  http://localhost:8082/swagger-ui.html"
 echo "   Notification Svc  →  http://localhost:8089/actuator/health"
+echo "   Product Service   →  http://localhost:8083/swagger-ui.html"
+echo "   Inventory Service →  http://localhost:8084/swagger-ui.html"
 echo "   Kafka UI          →  http://localhost:9093"
 echo "   Redis Commander   →  http://localhost:9191"
 echo ""

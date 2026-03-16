@@ -27,3 +27,9 @@ Thumbs.db
 
 # Docker volumes / local data
 mongodb-data/
+
+# Local-only work notes (not for repo)
+WORK_PROGRESS.md
+CLAUDE.md
+*.pids
+.pids

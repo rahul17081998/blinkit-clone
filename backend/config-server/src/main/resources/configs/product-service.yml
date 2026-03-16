@@ -1,0 +1,10 @@
+spring:
+  data:
+    mongodb:
+      database: product_db
+      auto-index-creation: true
+
+product:
+  cache:
+    category-ttl-minutes: 10
+    featured-ttl-minutes: 30
