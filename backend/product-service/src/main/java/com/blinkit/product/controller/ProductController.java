@@ -1,6 +1,7 @@
 package com.blinkit.product.controller;
 
 import com.blinkit.common.dto.ApiResponse;
+import com.blinkit.common.enums.ApiResponseCode;
 import com.blinkit.product.dto.response.ProductResponse;
 import com.blinkit.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -21,13 +22,15 @@ public class ProductController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        return ResponseEntity.ok(ApiResponse.ok("Products fetched",
-                productService.listProducts(page, size, sortBy, sortDir)));
+        return ResponseEntity.status(ApiResponseCode.PRODUCTS_FETCHED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PRODUCTS_FETCHED.getMessage(),
+                        productService.listProducts(page, size, sortBy, sortDir)));
     }
 
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable String productId) {
-        return ResponseEntity.ok(ApiResponse.ok("Product fetched", productService.getProduct(productId)));
+        return ResponseEntity.status(ApiResponseCode.PRODUCT_FETCHED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PRODUCT_FETCHED.getMessage(), productService.getProduct(productId)));
     }
 
     @GetMapping("/search")
@@ -35,7 +38,8 @@ public class ProductController {
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.ok("Search results", productService.searchProducts(q, page, size)));
+        return ResponseEntity.status(ApiResponseCode.PRODUCTS_FETCHED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PRODUCTS_FETCHED.getMessage(), productService.searchProducts(q, page, size)));
     }
 
     @GetMapping("/category/{slug}")
@@ -43,14 +47,16 @@ public class ProductController {
             @PathVariable String slug,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.ok("Products by category",
-                productService.listByCategory(slug, page, size)));
+        return ResponseEntity.status(ApiResponseCode.PRODUCTS_FETCHED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PRODUCTS_FETCHED.getMessage(),
+                        productService.listByCategory(slug, page, size)));
     }
 
     @GetMapping("/featured")
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> featured(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.ok("Featured products", productService.getFeaturedProducts(page, size)));
+        return ResponseEntity.status(ApiResponseCode.PRODUCTS_FETCHED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PRODUCTS_FETCHED.getMessage(), productService.getFeaturedProducts(page, size)));
     }
 }

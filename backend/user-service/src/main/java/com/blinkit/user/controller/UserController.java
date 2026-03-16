@@ -3,6 +3,7 @@ package com.blinkit.user.controller;
 import com.blinkit.user.dto.request.AddressRequest;
 import com.blinkit.user.dto.request.UpdateProfileRequest;
 import com.blinkit.common.dto.ApiResponse;
+import com.blinkit.common.enums.ApiResponseCode;
 import com.blinkit.user.entity.Address;
 import com.blinkit.user.entity.UserProfile;
 import com.blinkit.user.service.UserService;
@@ -10,7 +11,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,7 +30,8 @@ public class UserController {
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserProfile>> getProfile(
             @RequestHeader("X-User-Id") String userId) {
-        return ResponseEntity.ok(ApiResponse.ok("Profile fetched", userService.getProfile(userId)));
+        return ResponseEntity.status(ApiResponseCode.PROFILE_FETCHED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PROFILE_FETCHED.getMessage(), userService.getProfile(userId)));
     }
 
     @Operation(summary = "Update my profile")
@@ -39,7 +40,8 @@ public class UserController {
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader(value = "X-User-Email", required = false) String email,
             @Valid @RequestBody UpdateProfileRequest req) {
-        return ResponseEntity.ok(ApiResponse.ok("Profile updated", userService.updateProfile(userId, email, req)));
+        return ResponseEntity.status(ApiResponseCode.PROFILE_UPDATED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PROFILE_UPDATED.getMessage(), userService.updateProfile(userId, email, req)));
     }
 
     // ── Addresses ─────────────────────────────────────────────────
@@ -48,7 +50,8 @@ public class UserController {
     @GetMapping("/addresses")
     public ResponseEntity<ApiResponse<List<Address>>> getAddresses(
             @RequestHeader("X-User-Id") String userId) {
-        return ResponseEntity.ok(ApiResponse.ok("Addresses fetched", userService.getAddresses(userId)));
+        return ResponseEntity.status(ApiResponseCode.ADDRESSES_FETCHED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.ADDRESSES_FETCHED.getMessage(), userService.getAddresses(userId)));
     }
 
     @Operation(summary = "Add a new address")
@@ -56,8 +59,8 @@ public class UserController {
     public ResponseEntity<ApiResponse<Address>> addAddress(
             @RequestHeader("X-User-Id") String userId,
             @Valid @RequestBody AddressRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Address added", userService.addAddress(userId, req)));
+        return ResponseEntity.status(ApiResponseCode.ADDRESS_ADDED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.ADDRESS_ADDED.getMessage(), userService.addAddress(userId, req)));
     }
 
     @Operation(summary = "Update an address")
@@ -66,7 +69,8 @@ public class UserController {
             @RequestHeader("X-User-Id") String userId,
             @PathVariable String addressId,
             @Valid @RequestBody AddressRequest req) {
-        return ResponseEntity.ok(ApiResponse.ok("Address updated", userService.updateAddress(userId, addressId, req)));
+        return ResponseEntity.status(ApiResponseCode.ADDRESS_UPDATED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.ADDRESS_UPDATED.getMessage(), userService.updateAddress(userId, addressId, req)));
     }
 
     @Operation(summary = "Delete an address")
@@ -75,7 +79,8 @@ public class UserController {
             @RequestHeader("X-User-Id") String userId,
             @PathVariable String addressId) {
         userService.deleteAddress(userId, addressId);
-        return ResponseEntity.ok(ApiResponse.ok("Address deleted"));
+        return ResponseEntity.status(ApiResponseCode.ADDRESS_DELETED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.ADDRESS_DELETED.getMessage()));
     }
 
     @Operation(summary = "Set an address as default")
@@ -83,6 +88,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<Address>> setDefault(
             @RequestHeader("X-User-Id") String userId,
             @PathVariable String addressId) {
-        return ResponseEntity.ok(ApiResponse.ok("Default address updated", userService.setDefaultAddress(userId, addressId)));
+        return ResponseEntity.status(ApiResponseCode.DEFAULT_ADDRESS_SET.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.DEFAULT_ADDRESS_SET.getMessage(), userService.setDefaultAddress(userId, addressId)));
     }
 }

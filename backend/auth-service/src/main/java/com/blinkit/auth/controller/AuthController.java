@@ -5,11 +5,11 @@ import com.blinkit.auth.dto.request.SignupRequest;
 import com.blinkit.common.dto.ApiResponse;
 import com.blinkit.auth.dto.response.AuthResponse;
 import com.blinkit.auth.service.AuthService;
+import com.blinkit.common.enums.ApiResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,8 +27,8 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<Void>> signup(@Valid @RequestBody SignupRequest req) {
         authService.signup(req);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Registration successful. Check your email for OTP."));
+        return ResponseEntity.status(ApiResponseCode.REGISTRATION_SUCCESS.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.REGISTRATION_SUCCESS.getMessage()));
     }
 
     @Operation(summary = "Verify email with OTP")
@@ -36,14 +36,16 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> verify(@RequestParam String email,
                                                      @RequestParam String otp) {
         authService.verifyOtp(email, otp);
-        return ResponseEntity.ok(ApiResponse.ok("Email verified successfully. You can now login."));
+        return ResponseEntity.status(ApiResponseCode.EMAIL_VERIFIED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.EMAIL_VERIFIED.getMessage()));
     }
 
     @Operation(summary = "Login and receive JWT tokens")
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest req) {
         AuthResponse response = authService.login(req);
-        return ResponseEntity.ok(ApiResponse.ok("Login successful", response));
+        return ResponseEntity.status(ApiResponseCode.LOGIN_SUCCESS.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.LOGIN_SUCCESS.getMessage(), response));
     }
 
     @Operation(summary = "Refresh access token using refresh token")
@@ -52,7 +54,8 @@ public class AuthController {
         String userId = body.get("userId");
         String refreshToken = body.get("refreshToken");
         AuthResponse response = authService.refresh(userId, refreshToken);
-        return ResponseEntity.ok(ApiResponse.ok("Token refreshed", response));
+        return ResponseEntity.status(ApiResponseCode.TOKEN_REFRESHED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.TOKEN_REFRESHED.getMessage(), response));
     }
 
     @Operation(summary = "Logout — invalidates tokens")
@@ -63,6 +66,7 @@ public class AuthController {
         String token = (authHeader != null && authHeader.startsWith("Bearer "))
                 ? authHeader.substring(7) : "";
         authService.logout(userId, token);
-        return ResponseEntity.ok(ApiResponse.ok("Logged out successfully"));
+        return ResponseEntity.status(ApiResponseCode.LOGOUT_SUCCESS.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.LOGOUT_SUCCESS.getMessage()));
     }
 }

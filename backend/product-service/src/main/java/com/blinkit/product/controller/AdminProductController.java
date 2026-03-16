@@ -3,11 +3,11 @@ package com.blinkit.product.controller;
 import com.blinkit.product.dto.request.CreateProductRequest;
 import com.blinkit.product.dto.request.UpdateProductRequest;
 import com.blinkit.common.dto.ApiResponse;
+import com.blinkit.common.enums.ApiResponseCode;
 import com.blinkit.product.dto.response.ProductResponse;
 import com.blinkit.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,7 +21,9 @@ public class AdminProductController {
 
     private void requireAdmin(String role) {
         if (!"ADMIN".equals(role)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
+            throw new ResponseStatusException(
+                    ApiResponseCode.ACCESS_DENIED.getHttpStatus(),
+                    ApiResponseCode.ACCESS_DENIED.getMessage());
         }
     }
 
@@ -31,8 +33,8 @@ public class AdminProductController {
             @RequestHeader(value = "X-User-Role", required = false) String role,
             @Valid @RequestBody CreateProductRequest req) {
         requireAdmin(role);
-        ProductResponse product = productService.createProduct(req, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Product created", product));
+        return ResponseEntity.status(ApiResponseCode.PRODUCT_CREATED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PRODUCT_CREATED.getMessage(), productService.createProduct(req, userId)));
     }
 
     @PutMapping("/{productId}")
@@ -41,7 +43,8 @@ public class AdminProductController {
             @PathVariable String productId,
             @Valid @RequestBody UpdateProductRequest req) {
         requireAdmin(role);
-        return ResponseEntity.ok(ApiResponse.ok("Product updated", productService.updateProduct(productId, req)));
+        return ResponseEntity.status(ApiResponseCode.PRODUCT_UPDATED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PRODUCT_UPDATED.getMessage(), productService.updateProduct(productId, req)));
     }
 
     @DeleteMapping("/{productId}")
@@ -50,7 +53,8 @@ public class AdminProductController {
             @PathVariable String productId) {
         requireAdmin(role);
         productService.deleteProduct(productId);
-        return ResponseEntity.ok(ApiResponse.ok("Product deleted"));
+        return ResponseEntity.status(ApiResponseCode.PRODUCT_DELETED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PRODUCT_DELETED.getMessage()));
     }
 
     @PutMapping("/{productId}/toggle")
@@ -58,6 +62,7 @@ public class AdminProductController {
             @RequestHeader(value = "X-User-Role", required = false) String role,
             @PathVariable String productId) {
         requireAdmin(role);
-        return ResponseEntity.ok(ApiResponse.ok("Availability toggled", productService.toggleAvailability(productId)));
+        return ResponseEntity.status(ApiResponseCode.PRODUCT_TOGGLED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.PRODUCT_TOGGLED.getMessage(), productService.toggleAvailability(productId)));
     }
 }

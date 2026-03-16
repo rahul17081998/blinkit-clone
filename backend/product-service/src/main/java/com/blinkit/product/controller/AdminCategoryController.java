@@ -2,11 +2,11 @@ package com.blinkit.product.controller;
 
 import com.blinkit.product.dto.request.CreateCategoryRequest;
 import com.blinkit.common.dto.ApiResponse;
+import com.blinkit.common.enums.ApiResponseCode;
 import com.blinkit.product.dto.response.CategoryResponse;
 import com.blinkit.product.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,7 +20,9 @@ public class AdminCategoryController {
 
     private void requireAdmin(String role) {
         if (!"ADMIN".equals(role)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
+            throw new ResponseStatusException(
+                    ApiResponseCode.ACCESS_DENIED.getHttpStatus(),
+                    ApiResponseCode.ACCESS_DENIED.getMessage());
         }
     }
 
@@ -30,7 +32,7 @@ public class AdminCategoryController {
             @RequestHeader(value = "X-User-Role", required = false) String role,
             @Valid @RequestBody CreateCategoryRequest req) {
         requireAdmin(role);
-        CategoryResponse category = categoryService.createCategory(req, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Category created", category));
+        return ResponseEntity.status(ApiResponseCode.CATEGORY_CREATED.getHttpStatus())
+                .body(ApiResponse.ok(ApiResponseCode.CATEGORY_CREATED.getMessage(), categoryService.createCategory(req, userId)));
     }
 }
