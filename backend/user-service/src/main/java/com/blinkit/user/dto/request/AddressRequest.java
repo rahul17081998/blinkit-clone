@@ -4,13 +4,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import com.blinkit.common.enums.AddressLabel;
 import lombok.Data;
 
 @Data
 public class AddressRequest {
 
-    @NotBlank
-    private String label;        // HOME, WORK, OTHER
+    @NotNull
+    private AddressLabel label;
 
     @NotBlank @Size(max = 100)
     private String recipientName;

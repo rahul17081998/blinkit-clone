@@ -1,5 +1,7 @@
 package com.blinkit.notification.consumer;
 
+import com.blinkit.common.enums.NotificationStatus;
+import com.blinkit.common.enums.NotificationType;
 import com.blinkit.notification.entity.NotificationLog;
 import com.blinkit.notification.event.InventoryLowEvent;
 import com.blinkit.notification.event.UserPasswordResetEvent;
@@ -29,19 +31,19 @@ public class AuthEventConsumer {
                    containerFactory = "userRegisteredListenerFactory")
     public void onUserRegistered(UserRegisteredEvent event) {
         log.info("Received user.registered for userId={}", event.getUserId());
-        String status = "SENT";
-        String error  = null;
+        NotificationStatus status = NotificationStatus.SENT;
+        String error = null;
         try {
             emailService.sendOtpEmail(event.getEmail(), event.getFirstName(), event.getOtp());
         } catch (Exception e) {
             log.error("Failed to send OTP email to {}: {}", event.getEmail(), e.getMessage());
-            status = "FAILED";
+            status = NotificationStatus.FAILED;
             error  = e.getMessage();
         }
         logRepo.save(NotificationLog.builder()
                 .userId(event.getUserId())
                 .email(event.getEmail())
-                .type("USER_REGISTERED")
+                .type(NotificationType.USER_REGISTERED)
                 .status(status)
                 .errorMessage(error)
                 .sentAt(Instant.now())
@@ -52,19 +54,19 @@ public class AuthEventConsumer {
                    containerFactory = "userPasswordResetListenerFactory")
     public void onUserPasswordReset(UserPasswordResetEvent event) {
         log.info("Received user.password.reset for userId={}", event.getUserId());
-        String status = "SENT";
-        String error  = null;
+        NotificationStatus status = NotificationStatus.SENT;
+        String error = null;
         try {
             emailService.sendPasswordResetEmail(event.getEmail(), event.getResetToken());
         } catch (Exception e) {
             log.error("Failed to send reset email to {}: {}", event.getEmail(), e.getMessage());
-            status = "FAILED";
+            status = NotificationStatus.FAILED;
             error  = e.getMessage();
         }
         logRepo.save(NotificationLog.builder()
                 .userId(event.getUserId())
                 .email(event.getEmail())
-                .type("PASSWORD_RESET")
+                .type(NotificationType.PASSWORD_RESET)
                 .status(status)
                 .errorMessage(error)
                 .sentAt(Instant.now())
@@ -75,8 +77,8 @@ public class AuthEventConsumer {
                    containerFactory = "inventoryLowListenerFactory")
     public void onInventoryLow(InventoryLowEvent event) {
         log.info("Received inventory.low event for productId={}, qty={}", event.getProductId(), event.getAvailableQty());
-        String status = "SENT";
-        String error  = null;
+        NotificationStatus status = NotificationStatus.SENT;
+        String error = null;
         try {
             String subject = "Low Stock Alert: " + event.getProductName();
             String body = String.format(
@@ -93,13 +95,13 @@ public class AuthEventConsumer {
             emailService.sendAdminAlert(adminEmail, subject, body);
         } catch (Exception e) {
             log.error("Failed to send low-stock alert email: {}", e.getMessage());
-            status = "FAILED";
+            status = NotificationStatus.FAILED;
             error  = e.getMessage();
         }
         logRepo.save(NotificationLog.builder()
                 .userId("SYSTEM")
                 .email(adminEmail)
-                .type("INVENTORY_LOW")
+                .type(NotificationType.INVENTORY_LOW)
                 .status(status)
                 .errorMessage(error)
                 .sentAt(Instant.now())

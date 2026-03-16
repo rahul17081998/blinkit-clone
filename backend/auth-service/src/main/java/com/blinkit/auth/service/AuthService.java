@@ -17,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.blinkit.common.enums.Role;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -46,7 +48,7 @@ public class AuthService {
                 .userId(userId)
                 .email(req.getEmail().toLowerCase())
                 .password(passwordEncoder.encode(req.getPassword()))
-                .roles(List.of("CUSTOMER"))
+                .roles(List.of(Role.CUSTOMER))
                 .isVerified(false)
                 .isActive(true)
                 .build();
@@ -94,11 +96,11 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
-        List<String> roles = user.getRoles();
+        List<Role> roles = user.getRoles();
         if (roles == null || roles.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "User has no roles assigned");
         }
-        String role = roles.get(0);
+        String role = roles.get(0).name();
         String accessToken  = jwtUtil.generateAccessToken(user.getUserId(), user.getEmail(), role);
         String refreshToken = tokenService.createRefreshToken(user.getUserId());
 
@@ -132,11 +134,11 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired refresh token");
         }
 
-        List<String> roles = user.getRoles();
+        List<Role> roles = user.getRoles();
         if (roles == null || roles.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "User has no roles assigned");
         }
-        String role = roles.get(0);
+        String role = roles.get(0).name();
         String newAccessToken = jwtUtil.generateAccessToken(user.getUserId(), user.getEmail(), role);
 
         return AuthResponse.builder()

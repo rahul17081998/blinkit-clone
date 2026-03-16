@@ -2,7 +2,7 @@ package com.blinkit.product.controller;
 
 import com.blinkit.product.dto.request.CreateProductRequest;
 import com.blinkit.product.dto.request.UpdateProductRequest;
-import com.blinkit.product.dto.response.ApiResponse;
+import com.blinkit.common.dto.ApiResponse;
 import com.blinkit.product.dto.response.ProductResponse;
 import com.blinkit.product.service.ProductService;
 import jakarta.validation.Valid;

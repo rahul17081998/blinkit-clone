@@ -1,3 +1,107 @@
+# JWT Access Token & Refresh Token
+
+## What Are They?
+
+After a successful login, the API returns two tokens:
+
+```json
+{
+  "accessToken": "eyJhbGci...",
+  "refreshToken": "2db14814-eb24-4580-b4e4-86d739a67d1a",
+  "expiresIn": 900
+}
+```
+
+---
+
+## Access Token
+
+**What it is:** A JWT (JSON Web Token) — self-contained, cryptographically signed, short-lived.
+
+**Decoded payload:**
+```json
+{
+  "sub": "user@gmail.com",
+  "userId": "3861fb29-7e34-4921-9a1c-c3916114ea5d",
+  "email": "user@gmail.com",
+  "role": "CUSTOMER",
+  "iat": 1773684691,
+  "exp": 1773685591
+}
+```
+
+**Where to use it:** Every protected API call as an `Authorization` header:
+```bash
+curl http://localhost:8080/api/users/profile \
+  -H "Authorization: Bearer eyJhbGci..."
+```
+
+**Lifetime:** 15 minutes (`expiresIn: 900`). Gateway rejects it with `401` after expiry.
+
+**Who validates it:** The API Gateway (`JwtAuthFilter`) on every non-public request — checks signature, expiry, and Redis blacklist.
+
+**Downstream services:** Never parse the JWT. They only read `X-User-Id`, `X-User-Role`, `X-User-Email` headers injected by the gateway.
+
+---
+
+## Refresh Token
+
+**What it is:** A random UUID stored in Redis as `refresh:{userId}` → token value. No data inside — just a lookup key.
+
+**Lifetime:** 30 days.
+
+**Where to use it:** When the access token expires, call the refresh endpoint to get a new access token **without logging in again:**
+```bash
+curl -X POST http://localhost:8080/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "3861fb29-7e34-4921-9a1c-c3916114ea5d",
+    "refreshToken": "2db14814-eb24-4580-b4e4-86d739a67d1a"
+  }'
+```
+
+---
+
+## The Full Flow
+
+```
+Login → get accessToken (15 min) + refreshToken (30 days)
+         ↓
+Use accessToken on every API call via Authorization: Bearer header
+         ↓
+accessToken expires after 15 min → Gateway returns 401
+         ↓
+Call /auth/refresh with refreshToken → get a new accessToken
+         ↓
+refreshToken expires after 30 days → user must login again
+```
+
+---
+
+## Why Two Tokens?
+
+| | Access Token | Refresh Token |
+|---|---|---|
+| Lifetime | 15 min | 30 days |
+| Storage | Client memory / header | Client storage (secure) |
+| Used on | Every API call | Only to get new access token |
+| Validated by | Gateway (JWT signature + Redis blacklist) | Auth-service (Redis lookup) |
+| If stolen | Expires in max 15 min | Can be revoked in Redis |
+
+Short-lived access token limits damage if intercepted. Long-lived refresh token prevents user from having to log in every 15 minutes.
+
+---
+
+## Logout Behaviour
+
+On logout, auth-service:
+1. Adds `blacklist:{accessToken}` to Redis with TTL = remaining access token lifetime
+2. Deletes `refresh:{userId}` from Redis
+
+After logout, any request with the old access token → gateway finds it in blacklist → `401` immediately.
+
+---
+
 # Eureka — Service Discovery
 
 ## What is Eureka?

@@ -1,4 +1,4 @@
-package com.blinkit.auth.dto.response;
+package com.blinkit.common.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -4,6 +4,9 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.blinkit.common.enums.NotificationStatus;
+import com.blinkit.common.enums.NotificationType;
+
 import java.time.Instant;
 
 @Document(collection = "notification_logs")
@@ -18,8 +21,8 @@ public class NotificationLog {
 
     private String userId;
     private String email;
-    private String type;        // USER_REGISTERED, PASSWORD_RESET
-    private String status;      // SENT, FAILED
+    private NotificationType type;
+    private NotificationStatus status;
     private String errorMessage;
     private Instant sentAt;
 }

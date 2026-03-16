@@ -1,7 +1,7 @@
 package com.blinkit.inventory.controller;
 
 import com.blinkit.inventory.dto.request.UpdateStockRequest;
-import com.blinkit.inventory.dto.response.ApiResponse;
+import com.blinkit.common.dto.ApiResponse;
 import com.blinkit.inventory.dto.response.StockResponse;
 import com.blinkit.inventory.service.InventoryService;
 import jakarta.validation.Valid;

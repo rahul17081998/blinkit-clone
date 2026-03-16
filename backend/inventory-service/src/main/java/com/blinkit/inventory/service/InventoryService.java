@@ -19,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.blinkit.common.enums.StockMovementType;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,7 +56,7 @@ public class InventoryService {
             stock.setTotalQty(stock.getAvailableQty() + stock.getReservedQty());
 
             Stock saved = stockRepository.save(stock);
-            recordMovement(req.getProductId(), "RESERVE", -req.getQuantity(), prevQty, saved.getAvailableQty(), req.getOrderId(), null, "SYSTEM");
+            recordMovement(req.getProductId(), StockMovementType.RESERVE, -req.getQuantity(), prevQty, saved.getAvailableQty(), req.getOrderId(), null, "SYSTEM");
             checkAndPublishAlerts(saved);
 
             log.info("Reserved {} units for productId={}, orderId={}", req.getQuantity(), req.getProductId(), req.getOrderId());
@@ -76,7 +78,7 @@ public class InventoryService {
             stock.setTotalQty(stock.getAvailableQty() + stock.getReservedQty());
 
             Stock saved = stockRepository.save(stock);
-            recordMovement(req.getProductId(), "RELEASE", releaseQty, prevQty, saved.getAvailableQty(), req.getOrderId(), null, "SYSTEM");
+            recordMovement(req.getProductId(), StockMovementType.RELEASE, releaseQty, prevQty, saved.getAvailableQty(), req.getOrderId(), null, "SYSTEM");
 
             log.info("Released {} units for productId={}, orderId={}", releaseQty, req.getProductId(), req.getOrderId());
             return StockResponse.from(saved);
@@ -96,7 +98,7 @@ public class InventoryService {
             stock.setTotalQty(stock.getAvailableQty() + stock.getReservedQty());
 
             Stock saved = stockRepository.save(stock);
-            recordMovement(req.getProductId(), "SALE", -confirmQty, prevQty, saved.getAvailableQty(), req.getOrderId(), null, "SYSTEM");
+            recordMovement(req.getProductId(), StockMovementType.SALE, -confirmQty, prevQty, saved.getAvailableQty(), req.getOrderId(), null, "SYSTEM");
 
             log.info("Confirmed sale of {} units for productId={}, orderId={}", confirmQty, req.getProductId(), req.getOrderId());
             return StockResponse.from(saved);
@@ -118,7 +120,7 @@ public class InventoryService {
         }
 
         Stock saved = stockRepository.save(stock);
-        recordMovement(productId, "RESTOCK", req.getQuantityToAdd(), prevQty, saved.getAvailableQty(), null, req.getReason(), adminUserId);
+        recordMovement(productId, StockMovementType.RESTOCK, req.getQuantityToAdd(), prevQty, saved.getAvailableQty(), null, req.getReason(), adminUserId);
 
         log.info("Admin {} restocked productId={} by {}", adminUserId, productId, req.getQuantityToAdd());
         return StockResponse.from(saved);
@@ -128,7 +130,7 @@ public class InventoryService {
         return stockRepository.findAll().stream().map(StockResponse::from).collect(Collectors.toList());
     }
 
-    private void recordMovement(String productId, String type, int qty, int prevQty, int newQty,
+    private void recordMovement(String productId, StockMovementType type, int qty, int prevQty, int newQty,
                                  String orderId, String reason, String performedBy) {
         StockMovement movement = StockMovement.builder()
                 .productId(productId)

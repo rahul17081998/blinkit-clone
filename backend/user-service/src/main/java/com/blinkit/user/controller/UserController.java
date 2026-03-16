@@ -2,7 +2,7 @@ package com.blinkit.user.controller;
 
 import com.blinkit.user.dto.request.AddressRequest;
 import com.blinkit.user.dto.request.UpdateProfileRequest;
-import com.blinkit.user.dto.response.ApiResponse;
+import com.blinkit.common.dto.ApiResponse;
 import com.blinkit.user.entity.Address;
 import com.blinkit.user.entity.UserProfile;
 import com.blinkit.user.service.UserService;

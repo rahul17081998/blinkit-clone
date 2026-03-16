@@ -1,6 +1,6 @@
 package com.blinkit.product.controller;
 
-import com.blinkit.product.dto.response.ApiResponse;
+import com.blinkit.common.dto.ApiResponse;
 import com.blinkit.product.dto.response.CategoryResponse;
 import com.blinkit.product.service.CategoryService;
 import lombok.RequiredArgsConstructor;

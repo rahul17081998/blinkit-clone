@@ -7,6 +7,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.blinkit.common.enums.AddressLabel;
+
 import java.time.Instant;
 
 @Document(collection = "addresses")
@@ -24,7 +26,7 @@ public class Address {
     @Indexed
     private String userId;       // Foreign key → UserProfile.userId
 
-    private String label;        // HOME, WORK, OTHER
+    private AddressLabel label;
     private String recipientName;
     private String recipientPhone;
     private String flatNo;

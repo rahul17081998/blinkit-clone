@@ -7,6 +7,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.blinkit.common.enums.Role;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +32,7 @@ public class AuthUser {
     private String password;     // BCrypt hashed
 
     @Builder.Default
-    private List<String> roles = new ArrayList<>();  // CUSTOMER, ADMIN, DELIVERY_PARTNER
+    private List<Role> roles = new ArrayList<>();
 
     @Builder.Default
     private Boolean isVerified = false;

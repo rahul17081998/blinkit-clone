@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import com.blinkit.common.enums.Gender;
+
 import java.time.LocalDate;
 
 @Data
@@ -21,5 +23,5 @@ public class UpdateProfileRequest {
 
     private LocalDate dateOfBirth;
 
-    private String gender;  // MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY
+    private Gender gender;
 }

@@ -9,6 +9,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.blinkit.common.enums.StockMovementType;
+
 import java.time.Instant;
 
 @Data
@@ -24,7 +26,7 @@ public class StockMovement {
     @Indexed
     private String productId;
 
-    private String type;  // RESTOCK, RESERVE, RELEASE, SALE, ADJUSTMENT, RETURN
+    private StockMovementType type;
     private Integer quantity;
     private Integer previousAvailableQty;
     private Integer newAvailableQty;

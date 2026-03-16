@@ -2,7 +2,7 @@ package com.blinkit.auth.controller;
 
 import com.blinkit.auth.dto.request.ForgotPasswordRequest;
 import com.blinkit.auth.dto.request.ResetPasswordRequest;
-import com.blinkit.auth.dto.response.ApiResponse;
+import com.blinkit.common.dto.ApiResponse;
 import com.blinkit.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

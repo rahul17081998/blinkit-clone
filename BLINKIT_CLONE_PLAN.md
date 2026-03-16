@@ -3512,4 +3512,101 @@ eureka:
 
 ---
 
+## 13. API RESPONSE CODES — STANDARD CONTRACT
+
+Every API returns this wrapper regardless of success or failure:
+```json
+{
+  "success": true | false,
+  "message": "Human readable message",
+  "data": { ... } | null
+}
+```
+
+### Standard HTTP Codes Used
+
+| Code | Name | When | `success` |
+|------|------|------|-----------|
+| `200` | OK | Successful GET, PUT, DELETE, non-creating POST | `true` |
+| `201` | Created | New resource created | `true` |
+| `400` | Bad Request | Validation failed, missing/malformed input, business rule violation | `false` |
+| `401` | Unauthorized | No token, expired token, blacklisted token, invalid credentials | `false` |
+| `403` | Forbidden | Authenticated but not allowed (unverified, deactivated, wrong role) | `false` |
+| `404` | Not Found | Resource doesn't exist with given ID | `false` |
+| `409` | Conflict | Duplicate / already exists | `false` |
+| `410` | Gone | Resource existed but is now expired/consumed | `false` |
+| `500` | Internal Server Error | Unexpected exception — always logged server-side | `false` |
+
+---
+
+### Per-Service Response Code Plan
+
+#### Auth Service (`/api/auth/**`)
+
+| Endpoint | `201` | `200` | `400` | `401` | `403` | `404` | `409` | `410` |
+|----------|-------|-------|-------|-------|-------|-------|-------|-------|
+| `POST /signup` | ✅ success | — | validation fail | — | — | — | email taken | — |
+| `GET /verify` | — | ✅ success | bad/expired OTP, already verified | — | — | user not found | — | — |
+| `POST /login` | — | ✅ success | validation fail | wrong password | unverified / deactivated | user not found | — | — |
+| `POST /refresh` | — | ✅ success | missing fields | invalid/expired refresh token | — | user not found | — | — |
+| `POST /logout` | — | ✅ success | — | invalid token (gateway) | — | — | — | — |
+| `POST /forgot-password` | — | ✅ success | validation fail | — | — | user not found | — | — |
+| `GET /reset-password/validate/{token}` | — | ✅ valid | — | — | — | — | — | expired/invalid |
+| `POST /reset-password/{token}` | — | ✅ success | validation fail | — | — | — | — | expired/invalid |
+
+#### User Service (`/api/users/**`)
+
+| Endpoint | `201` | `200` | `400` | `401` | `404` |
+|----------|-------|-------|-------|-------|-------|
+| `GET /profile` | — | ✅ success | — | no token | profile not found |
+| `PUT /profile` | — | ✅ success | validation fail | no token | — |
+| `GET /addresses` | — | ✅ success | — | no token | — |
+| `POST /addresses` | ✅ success | — | validation fail | no token | — |
+| `PUT /addresses/{id}` | — | ✅ success | validation fail | no token | not found |
+| `DELETE /addresses/{id}` | — | ✅ success | — | no token | not found |
+| `PUT /addresses/{id}/default` | — | ✅ success | — | no token | not found |
+
+#### Product Service (`/api/products/**, /api/categories/**`)
+
+| Endpoint | `201` | `200` | `400` | `401` | `403` | `404` | `409` |
+|----------|-------|-------|-------|-------|-------|-------|-------|
+| `GET /products` | — | ✅ success | — | — | — | — | — |
+| `GET /products/{id}` | — | ✅ success | — | — | — | not found | — |
+| `GET /products/search?q=` | — | ✅ success | missing `q` param | — | — | — | — |
+| `GET /products/category/{slug}` | — | ✅ success | — | — | — | — | — |
+| `POST /products/admin` | ✅ success | — | validation / sellingPrice > mrp | no token | not ADMIN | bad categoryId | duplicate slug |
+| `PUT /products/admin/{id}` | — | ✅ success | validation fail | no token | not ADMIN | not found | — |
+| `PUT /products/admin/{id}/toggle` | — | ✅ success | — | no token | not ADMIN | not found | — |
+| `DELETE /products/admin/{id}` | — | ✅ success | — | no token | not ADMIN | not found | — |
+| `GET /categories` | — | ✅ success | — | — | — | — | — |
+| `POST /categories/admin` | ✅ success | — | missing fields | no token | not ADMIN | bad parentId | duplicate name |
+
+#### Inventory Service (`/api/inventory/**`)
+
+| Endpoint | `200` | `400` | `401` | `403` | `404` | `409` |
+|----------|-------|-------|-------|-------|-------|-------|
+| `GET /inventory/{productId}` | ✅ success | — | no token | — | not found | — |
+| `GET /inventory/admin` | ✅ success | — | no token | not ADMIN | — | — |
+| `PUT /inventory/admin/{productId}` | ✅ success | — | no token | not ADMIN | not found | — |
+| `POST /inventory/reserve` | ✅ success | — | no token | — | product not found | insufficient stock |
+| `POST /inventory/release` | ✅ success | — | no token | — | not found | — |
+| `POST /inventory/confirm` | ✅ success | — | no token | — | not found | — |
+
+---
+
+### Frontend Handling Rules
+
+```
+200 / 201 → success → show data or success toast
+400       → show field-level validation errors from message
+401       → token expired or missing → redirect to login
+403       → show "Access Denied" or "Please verify your email" based on message
+404       → show empty state or "Not Found" page
+409       → show inline conflict error (e.g. "Email already taken")
+410       → show "Link expired, please request a new one"
+500       → show generic "Something went wrong. Try again." toast
+```
+
+---
+
 *Plan created: 2026-03-15 | Based on journalApp JWT implementation*

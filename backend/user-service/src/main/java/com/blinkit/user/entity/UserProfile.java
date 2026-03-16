@@ -7,6 +7,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.blinkit.common.enums.Gender;
+
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -32,7 +34,7 @@ public class UserProfile {
     private String phone;
     private String profileImageUrl;
     private LocalDate dateOfBirth;
-    private String gender;       // MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY
+    private Gender gender;
 
     @Builder.Default
     private Boolean isPhoneVerified = false;

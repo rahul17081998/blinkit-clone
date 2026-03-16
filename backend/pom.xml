@@ -22,6 +22,9 @@
 
     <!-- ─── All Microservice Modules ─────────────────────────────── -->
     <modules>
+        <!-- Shared Library — must be first so services can depend on it -->
+        <module>common-lib</module>
+
         <!-- Stage 1 — Infrastructure -->
         <module>eureka-server</module>
         <module>config-server</module>
