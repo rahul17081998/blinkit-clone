@@ -26,7 +26,18 @@ fi
 mkdir -p "$LOG_DIR"
 > "$PID_FILE"   # clear old PIDs
 
-# ── Step 0: Infrastructure Health Check ──────────────────────────
+# ── Step 0a: Start Colima + Docker infra if not running ──────────
+if [ -f "$SCRIPT_DIR/start-infra.sh" ]; then
+  bash "$SCRIPT_DIR/start-infra.sh"
+  if [ $? -ne 0 ]; then
+    echo "[ERROR] Infrastructure startup failed. See details above."
+    exit 1
+  fi
+else
+  echo "[WARN] start-infra.sh not found — skipping auto infra startup"
+fi
+
+# ── Step 0b: Infrastructure Health Check ─────────────────────────
 echo ""
 echo "[INFO] Running infrastructure connectivity check..."
 echo "──────────────────────────────────────────────────"
@@ -36,9 +47,6 @@ if [ -f "$SCRIPT_DIR/infra-check.sh" ]; then
   if [ $INFRA_EXIT -ne 0 ]; then
     echo ""
     echo "[ERROR] Infrastructure check failed. Fix the issues above before starting services."
-    echo "        Make sure colima + docker compose infra are running:"
-    echo "          colima start"
-    echo "          docker compose -f docker-compose.infra.yml up -d"
     exit 1
   fi
 else
