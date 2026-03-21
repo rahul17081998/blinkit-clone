@@ -60,6 +60,7 @@ public class AuthService {
                 .userId(userId)
                 .email(user.getEmail())
                 .firstName(req.getFirstName())
+                .lastName(req.getLastName())
                 .otp(otp)
                 .build());
 

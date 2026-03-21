@@ -7,11 +7,12 @@ import com.blinkit.inventory.dto.response.StockResponse;
 import com.blinkit.inventory.service.InventoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/inventory/admin")
@@ -29,11 +30,12 @@ public class AdminInventoryController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<StockResponse>>> getAllStock(
-            @RequestHeader(value = "X-User-Role", required = false) String role) {
+    public ResponseEntity<ApiResponse<Page<StockResponse>>> getAllStock(
+            @RequestHeader(value = "X-User-Role", required = false) String role,
+            @PageableDefault(size = 20, sort = "productId") Pageable pageable) {
         requireAdmin(role);
         return ResponseEntity.status(ApiResponseCode.ALL_STOCK_FETCHED.getHttpStatus())
-                .body(ApiResponse.ok(ApiResponseCode.ALL_STOCK_FETCHED.getMessage(), inventoryService.getAllStock()));
+                .body(ApiResponse.ok(ApiResponseCode.ALL_STOCK_FETCHED.getMessage(), inventoryService.getAllStock(pageable)));
     }
 
     @PutMapping("/{productId}")

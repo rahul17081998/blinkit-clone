@@ -29,6 +29,7 @@ public class AuthEventConsumer {
                 .userId(event.getUserId())
                 .email(event.getEmail())
                 .firstName(event.getFirstName())
+                .lastName(event.getLastName())
                 .build();
         profileRepo.save(profile);
         log.info("Created profile for userId={}", event.getUserId());

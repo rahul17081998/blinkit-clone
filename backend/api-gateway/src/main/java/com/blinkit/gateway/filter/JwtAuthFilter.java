@@ -61,10 +61,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             "/actuator"
     );
 
-    // Routes that are public only for GET requests (catalog browsing)
+    // Routes that are public only for GET requests (catalog browsing + promo banner)
     private static final List<String> PUBLIC_GET_PATHS = List.of(
             "/api/products",
-            "/api/categories"
+            "/api/categories",
+            "/api/coupons/active"
     );
 
     @Override

@@ -22,8 +22,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.blinkit.common.enums.StockMovementType;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Slf4j
 @Service
@@ -126,8 +126,8 @@ public class InventoryService {
         return StockResponse.from(saved);
     }
 
-    public List<StockResponse> getAllStock() {
-        return stockRepository.findAll().stream().map(StockResponse::from).collect(Collectors.toList());
+    public Page<StockResponse> getAllStock(Pageable pageable) {
+        return stockRepository.findAll(pageable).map(StockResponse::from);
     }
 
     private void recordMovement(String productId, StockMovementType type, int qty, int prevQty, int newQty,

@@ -13,5 +13,6 @@ public class UserRegisteredEvent {
     private String userId;
     private String email;
     private String firstName;
+    private String lastName;
     private String otp;         // 6-digit OTP for email verification
 }
