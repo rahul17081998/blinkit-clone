@@ -8,7 +8,7 @@ PID_FILE="$SCRIPT_DIR/.pids"
 
 if [ ! -f "$PID_FILE" ]; then
   echo "[INFO] No .pids file found — killing by port instead"
-  for port in 8761 8888 8080 8081 8082 8089 8084 8083; do
+  for port in 8761 8888 8080 8081 8082 8089 8084 8083 8090 8087; do
     pid=$(lsof -ti ":$port" 2>/dev/null)
     if [ -n "$pid" ]; then
       kill "$pid" 2>/dev/null && echo "[INFO] Killed process on port $port (PID $pid)"
@@ -29,7 +29,7 @@ done < "$PID_FILE"
 echo "[INFO] Waiting for services to stop..."
 sleep 3
 
-for port in 8761 8888 8080 8081 8082 8089 8083 8084; do
+for port in 8761 8888 8080 8081 8082 8089 8083 8084 8090 8087; do
   pid=$(lsof -ti ":$port" 2>/dev/null)
   if [ -n "$pid" ]; then
     echo "[WARN] Port $port still in use (PID $pid) — force killing..."

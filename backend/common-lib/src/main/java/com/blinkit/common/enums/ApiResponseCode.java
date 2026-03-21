@@ -45,6 +45,25 @@ public enum ApiResponseCode {
     STOCK_RELEASED(HttpStatus.OK, "Stock released"),
     STOCK_CONFIRMED(HttpStatus.OK, "Stock confirmed"),
 
+    // ── Coupon ────────────────────────────────────────────────────────
+    COUPON_CREATED(HttpStatus.CREATED, "Coupon created"),
+    COUPONS_FETCHED(HttpStatus.OK, "Coupons fetched"),
+    COUPON_FETCHED(HttpStatus.OK, "Coupon fetched"),
+    COUPON_UPDATED(HttpStatus.OK, "Coupon updated"),
+    COUPON_DELETED(HttpStatus.OK, "Coupon deleted"),
+    ACTIVE_COUPONS_FETCHED(HttpStatus.OK, "Active coupons fetched"),
+    COUPON_USAGE_RECORDED(HttpStatus.OK, "Coupon usage recorded"),
+
+    // ── Cart ──────────────────────────────────────────────────────────
+    CART_FETCHED(HttpStatus.OK, "Cart fetched"),
+    CART_CLEARED(HttpStatus.OK, "Cart cleared"),
+    ITEM_ADDED(HttpStatus.OK, "Item added to cart"),
+    ITEM_UPDATED(HttpStatus.OK, "Cart item updated"),
+    ITEM_REMOVED(HttpStatus.OK, "Item removed from cart"),
+    PROMO_APPLIED(HttpStatus.OK, "Promo code applied"),
+    PROMO_REMOVED(HttpStatus.OK, "Promo code removed"),
+    CART_COUNT_FETCHED(HttpStatus.OK, "Cart count fetched"),
+
     // ── 4xx Errors ────────────────────────────────────────────────────
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Validation failed"),
     INVALID_OTP(HttpStatus.BAD_REQUEST, "Invalid or expired OTP"),
@@ -68,6 +87,11 @@ public enum ApiResponseCode {
     PRODUCT_SLUG_EXISTS(HttpStatus.CONFLICT, "Product with this slug already exists"),
     CATEGORY_NAME_EXISTS(HttpStatus.CONFLICT, "Category with this name already exists"),
     INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "Insufficient stock"),
+    COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "Coupon not found"),
+    COUPON_CODE_EXISTS(HttpStatus.CONFLICT, "Coupon with this code already exists"),
+    COUPON_INVALID(HttpStatus.BAD_REQUEST, "Coupon is invalid or not applicable"),
+    PRODUCT_UNAVAILABLE(HttpStatus.CONFLICT, "Product is not available"),
+    MAX_QUANTITY_EXCEEDED(HttpStatus.BAD_REQUEST, "Maximum quantity per item is 10"),
     RESET_TOKEN_EXPIRED(HttpStatus.GONE, "Reset token expired or invalid"),
 
     // ── 5xx Errors ────────────────────────────────────────────────────

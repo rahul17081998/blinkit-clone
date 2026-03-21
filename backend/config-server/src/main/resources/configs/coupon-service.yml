@@ -1,0 +1,5 @@
+spring:
+  data:
+    mongodb:
+      database: coupon_db
+      auto-index-creation: true
