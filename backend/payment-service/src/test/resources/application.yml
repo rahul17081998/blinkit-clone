@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: payment-service-test
+  config:
+    import: ""   # disable config-server import in tests
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/test_payment_db
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+
+internal:
+  secret-key: test-secret

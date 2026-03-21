@@ -64,6 +64,23 @@ public enum ApiResponseCode {
     PROMO_REMOVED(HttpStatus.OK, "Promo code removed"),
     CART_COUNT_FETCHED(HttpStatus.OK, "Cart count fetched"),
 
+    // ── Order ─────────────────────────────────────────────────────────
+    ORDER_PLACED(HttpStatus.CREATED, "Order placed successfully"),
+    ORDERS_FETCHED(HttpStatus.OK, "Orders fetched"),
+    ORDER_FETCHED(HttpStatus.OK, "Order fetched"),
+    ORDER_CANCELLED(HttpStatus.OK, "Order cancelled successfully"),
+    ORDER_STATUS_UPDATED(HttpStatus.OK, "Order status updated"),
+
+    // ── Payment / Wallet ──────────────────────────────────────────────
+    WALLET_FETCHED(HttpStatus.OK, "Wallet details fetched"),
+    WALLETS_FETCHED(HttpStatus.OK, "Wallets fetched"),
+    TRANSACTION_HISTORY_FETCHED(HttpStatus.OK, "Transaction history fetched"),
+    TRANSACTION_FETCHED(HttpStatus.OK, "Transaction fetched"),
+    TRANSACTIONS_FETCHED(HttpStatus.OK, "Transactions fetched"),
+    PAYMENT_SUCCESS(HttpStatus.OK, "Payment successful"),
+    REFUND_SUCCESS(HttpStatus.OK, "Refund processed successfully"),
+    WALLET_TOPUP_SUCCESS(HttpStatus.OK, "Wallet topped up successfully"),
+
     // ── 4xx Errors ────────────────────────────────────────────────────
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Validation failed"),
     INVALID_OTP(HttpStatus.BAD_REQUEST, "Invalid or expired OTP"),
@@ -93,6 +110,12 @@ public enum ApiResponseCode {
     PRODUCT_UNAVAILABLE(HttpStatus.CONFLICT, "Product is not available"),
     MAX_QUANTITY_EXCEEDED(HttpStatus.BAD_REQUEST, "Maximum quantity per item is 10"),
     RESET_TOKEN_EXPIRED(HttpStatus.GONE, "Reset token expired or invalid"),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Order not found"),
+    WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "Wallet not found"),
+    TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "Transaction not found"),
+    ORDER_CANNOT_CANCEL(HttpStatus.BAD_REQUEST, "Order cannot be cancelled in its current status"),
+    INSUFFICIENT_WALLET_BALANCE(HttpStatus.BAD_REQUEST, "Insufficient wallet balance"),
+    CART_EMPTY(HttpStatus.BAD_REQUEST, "Cart is empty"),
 
     // ── 5xx Errors ────────────────────────────────────────────────────
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again later.");

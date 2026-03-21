@@ -44,8 +44,8 @@
         <module>cart-service</module>
 
         <!-- Stage 5 — Orders & Payments -->
-        <!-- <module>order-service</module> -->
-        <!-- <module>payment-service</module> -->
+        <module>payment-service</module>
+        <module>order-service</module>
 
         <!-- Stage 7 — Delivery & Reviews -->
         <!-- <module>delivery-service</module> -->
