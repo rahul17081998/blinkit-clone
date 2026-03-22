@@ -84,14 +84,6 @@ function AppRoutes() {
 
         {/* ── Admin Routes ────────────────────────────────── */}
         <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminDashboardPage />
-            </AdminRoute>
-          }
-        />
-        <Route
           path="/admin/*"
           element={
             <AdminRoute>

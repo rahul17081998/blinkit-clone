@@ -24,7 +24,36 @@ export default function HomePage() {
         ]);
         setCategories(catRes.data.data.filter(c => !c.parentCategoryId));
         setProducts(prodRes.data.data.content);
-        setCoupons(couponRes.data.data?.slice(0, 3) || []);
+        const AVG_BASKET = 500;   // assumed average order value (₹)
+        const DELIVERY_FEE = 40; // assumed standard delivery fee (₹)
+
+        const couponScore = (c) => {
+          let saving;
+          if (c.type === 'PERCENT') {
+            const raw = (c.value / 100) * AVG_BASKET;
+            saving = c.maxDiscount ? Math.min(raw, c.maxDiscount) : raw;
+          } else if (c.type === 'FLAT') {
+            saving = c.value;
+          } else if (c.type === 'FREE_DELIVERY') {
+            saving = DELIVERY_FEE;
+          } else {
+            saving = 0;
+          }
+          // Penalise coupons that require more than the avg basket to redeem
+          const accessibility = c.minOrderAmount > 0
+            ? Math.min(1, AVG_BASKET / c.minOrderAmount)
+            : 1;
+          return saving * accessibility;
+        };
+
+        const top3 = (couponRes.data.data || [])
+          .sort((a, b) => {
+            const diff = couponScore(b) - couponScore(a);
+            // Tie-break: lower minOrderAmount is easier to redeem → rank higher
+            return diff !== 0 ? diff : a.minOrderAmount - b.minOrderAmount;
+          })
+          .slice(0, 3);
+        setCoupons(top3);
       } catch (err) {
         console.error('HomePage load error:', err);
       } finally {
@@ -57,7 +86,9 @@ export default function HomePage() {
                 Limited offer
               </p>
               <h2 className="text-xl font-black text-dark mb-1">
-                {coupon.type === 'FLAT' ? `FLAT ₹${coupon.value} OFF` : `${coupon.value}% OFF`}
+                {coupon.type === 'FLAT' ? `FLAT ₹${coupon.value} OFF`
+                  : coupon.type === 'FREE_DELIVERY' ? 'FREE DELIVERY'
+                  : `${coupon.value}% OFF`}
               </h2>
               <p className="text-sm text-dark/70">
                 Use code: <span className="font-bold">{coupon.code}</span>

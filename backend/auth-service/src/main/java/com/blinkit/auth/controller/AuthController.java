@@ -78,6 +78,17 @@ public class AuthController {
                 .body(ApiResponse.ok("Delivery agent account created", result));
     }
 
+    @Operation(summary = "Get auth user info by userId (admin only)")
+    @GetMapping("/admin/user/{userId}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAdminUserInfo(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable String userId) {
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
+        }
+        return ResponseEntity.ok(ApiResponse.ok("User found", authService.getAdminUserInfo(userId)));
+    }
+
     @Operation(summary = "Delete my account permanently (hard delete)")
     @DeleteMapping("/account")
     public ResponseEntity<ApiResponse<Void>> deleteAccount(

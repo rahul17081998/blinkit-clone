@@ -51,6 +51,11 @@ public class UserService {
         return addressRepo.findByUserId(userId);
     }
 
+    public Address getAddressById(String addressId) {
+        return addressRepo.findByAddressId(addressId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Address not found"));
+    }
+
     public Address addAddress(String userId, AddressRequest req) {
         Address address = Address.builder()
                 .addressId(UUID.randomUUID().toString())

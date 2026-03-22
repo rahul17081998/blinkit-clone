@@ -153,17 +153,20 @@ public class ProductService {
     public Page<ProductResponse> listProducts(int page, int size, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return productRepository.findByIsAvailableTrue(pageable).map(ProductResponse::from);
+        // Return all products — unavailable ones are shown faded on the customer UI
+        return productRepository.findAll(pageable).map(ProductResponse::from);
     }
 
     public Page<ProductResponse> listByCategory(String slug, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("sellingPrice").ascending());
-        return productRepository.findByCategorySlugAndIsAvailableTrue(slug, pageable).map(ProductResponse::from);
+        // Return all products in category — unavailable shown faded
+        return productRepository.findByCategorySlug(slug, pageable).map(ProductResponse::from);
     }
 
     public Page<ProductResponse> searchProducts(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return productRepository.searchByText(query, pageable).map(ProductResponse::from);
+        // Regex search enables partial/prefix matching (e.g. "oni" matches "onion")
+        return productRepository.searchByNameRegex(query, pageable).map(ProductResponse::from);
     }
 
     public ProductResponse getProduct(String productId) {

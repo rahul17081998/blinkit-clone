@@ -50,22 +50,14 @@ export default function ProductCard({ product }) {
 
   const [imgFailed, setImgFailed] = useState(false);
 
-  return (
-    <Link
-      to={`/product/${productId}`}
-      className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col gap-2 hover:shadow-md transition-shadow group"
-    >
+  const cardContent = (
+    <>
       {/* Image area */}
       <div className="relative">
-        {discountPercent > 0 && (
+        {discountPercent > 0 && isAvailable && (
           <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md z-10">
             {discountPercent}% OFF
           </span>
-        )}
-        {!isAvailable && (
-          <div className="absolute inset-0 bg-white/70 rounded-xl flex items-center justify-center z-10">
-            <span className="text-xs font-semibold text-gray-500">Out of Stock</span>
-          </div>
         )}
         <div className={`aspect-square w-full bg-gradient-to-br ${bg} rounded-xl overflow-hidden flex items-center justify-center`}>
           {imgSrc && !imgFailed ? (
@@ -99,6 +91,27 @@ export default function ProductCard({ product }) {
         </div>
         <AddToCartButton product={product} size="sm" />
       </div>
+    </>
+  );
+
+  if (!isAvailable) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col gap-2 opacity-55 relative select-none">
+        <div className="absolute inset-0 rounded-2xl z-10 cursor-not-allowed" />
+        <div className="absolute top-2 right-2 z-20 bg-gray-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+          Unavailable
+        </div>
+        {cardContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={`/product/${productId}`}
+      className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col gap-2 hover:shadow-md transition-shadow group"
+    >
+      {cardContent}
     </Link>
   );
 }

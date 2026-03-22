@@ -181,6 +181,10 @@ public class DeliveryTaskService {
         return DeliveryTaskResponse.from(findByTaskId(taskId));
     }
 
+    public Optional<DeliveryTaskResponse> getTaskByOrderId(String orderId) {
+        return taskRepository.findByOrderId(orderId).map(DeliveryTaskResponse::from);
+    }
+
     public DeliveryTaskResponse assignPartner(String taskId, AssignPartnerRequest req) {
         DeliveryTask task = findByTaskId(taskId);
 

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/authStore';
 
 // Use relative URL — Vite proxy forwards /api → http://localhost:8080 in dev
@@ -82,10 +83,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         useAuthStore.getState().logout();
-        // Show toast + redirect — import dynamically to avoid circular deps
-        import('react-hot-toast').then(({ default: toast }) => {
-          toast.error('Session expired. Please log in again.');
-        });
+        toast.error('Session expired. Please log in again.');
         window.location.href = '/login';
         // Throw a special sentinel so callers know this is an auth error, not a domain error
         const authErr = new Error('SESSION_EXPIRED');

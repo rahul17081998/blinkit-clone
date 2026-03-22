@@ -256,6 +256,20 @@ public class AuthService {
                 .build());
     }
 
+    // ── Admin lookup ──────────────────────────────────────────────
+
+    public Map<String, Object> getAdminUserInfo(String userId) {
+        AuthUser user = userRepo.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        return Map.of(
+                "userId", user.getUserId(),
+                "email", user.getEmail(),
+                "roles", user.getRoles(),
+                "isVerified", user.getIsVerified(),
+                "isActive", user.getIsActive()
+        );
+    }
+
     // ── Helper ────────────────────────────────────────────────────
 
     private AuthUser findByEmail(String email) {

@@ -44,6 +44,28 @@ public class UserController {
                 .body(ApiResponse.ok(ApiResponseCode.PROFILE_UPDATED.getMessage(), userService.updateProfile(userId, email, req)));
     }
 
+    // ── Admin lookups ──────────────────────────────────────────────
+
+    @GetMapping("/admin/{userId}")
+    public ResponseEntity<ApiResponse<UserProfile>> getUserById(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable String userId) {
+        if (!"ADMIN".equalsIgnoreCase(role))
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Admin access required");
+        return ResponseEntity.ok(ApiResponse.ok("Profile fetched", userService.getProfile(userId)));
+    }
+
+    @GetMapping("/admin/address/{addressId}")
+    public ResponseEntity<ApiResponse<Address>> getAddressById(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable String addressId) {
+        if (!"ADMIN".equalsIgnoreCase(role))
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Admin access required");
+        return ResponseEntity.ok(ApiResponse.ok("Address fetched", userService.getAddressById(addressId)));
+    }
+
     // ── Addresses ─────────────────────────────────────────────────
 
     @Operation(summary = "List my addresses")

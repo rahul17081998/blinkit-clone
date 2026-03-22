@@ -112,8 +112,13 @@ public class InventoryService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Stock not found for product"));
 
         int prevQty = stock.getAvailableQty();
-        stock.setAvailableQty(stock.getAvailableQty() + req.getQuantityToAdd());
-        stock.setTotalQty(stock.getAvailableQty() + stock.getReservedQty());
+        int newQty = prevQty + req.getQuantityToAdd();
+        if (newQty < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Cannot reduce stock below 0. Current available: " + prevQty);
+        }
+        stock.setAvailableQty(newQty);
+        stock.setTotalQty(newQty + stock.getReservedQty());
         stock.setLastRestockedAt(Instant.now());
         if (req.getLowStockThreshold() != null) {
             stock.setLowStockThreshold(req.getLowStockThreshold());

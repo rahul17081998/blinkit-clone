@@ -10,8 +10,8 @@ export default function AddToCartButton({ product, size = 'md' }) {
 
   if (!product.isAvailable) {
     return (
-      <span className={`text-xs text-gray-400 font-medium ${isSmall ? 'px-2 py-1' : 'px-3 py-2'}`}>
-        Out of Stock
+      <span className={`text-xs font-bold text-gray-400 bg-gray-100 rounded-xl ${isSmall ? 'px-2 py-1' : 'px-3 py-2'}`}>
+        Unavailable
       </span>
     );
   }

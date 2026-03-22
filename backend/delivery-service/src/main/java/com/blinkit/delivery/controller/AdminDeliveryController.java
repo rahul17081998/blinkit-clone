@@ -45,6 +45,16 @@ public class AdminDeliveryController {
         return ResponseEntity.ok(ApiResponse.ok("Task fetched", taskService.getTaskById(taskId)));
     }
 
+    @GetMapping("/tasks/by-order/{orderId}")
+    public ResponseEntity<ApiResponse<DeliveryTaskResponse>> getTaskByOrderId(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable String orderId) {
+        requireAdmin(role);
+        return taskService.getTaskByOrderId(orderId)
+                .map(t -> ResponseEntity.ok(ApiResponse.ok("Task fetched", t)))
+                .orElse(ResponseEntity.ok(ApiResponse.ok("No delivery task found", null)));
+    }
+
     @PostMapping("/tasks/{taskId}/assign")
     public ResponseEntity<ApiResponse<DeliveryTaskResponse>> assignPartner(
             @RequestHeader("X-User-Role") String role,

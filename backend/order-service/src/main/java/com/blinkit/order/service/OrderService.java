@@ -226,6 +226,14 @@ public class OrderService {
                 .map(this::toOrderResponse);
     }
 
+    // ── Admin: get single order ───────────────────────────────────────
+
+    public OrderResponse getOrderAdmin(String orderId) {
+        Order order = orderRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+        return toOrderResponse(order);
+    }
+
     // ── Admin: update status ──────────────────────────────────────────
 
     public OrderResponse updateStatus(String orderId, UpdateOrderStatusRequest req) {
