@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -32,6 +33,14 @@ public class UserController {
             @RequestHeader("X-User-Id") String userId) {
         return ResponseEntity.status(ApiResponseCode.PROFILE_FETCHED.getHttpStatus())
                 .body(ApiResponse.ok(ApiResponseCode.PROFILE_FETCHED.getMessage(), userService.getProfile(userId)));
+    }
+
+    @Operation(summary = "Upload profile photo")
+    @PostMapping("/profile/photo")
+    public ResponseEntity<ApiResponse<UserProfile>> uploadProfilePhoto(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(ApiResponse.ok("Profile photo updated", userService.updateProfilePhoto(userId, file)));
     }
 
     @Operation(summary = "Update my profile")

@@ -7,8 +7,6 @@ import lombok.Data;
 
 import com.blinkit.common.enums.Gender;
 
-import java.time.LocalDate;
-
 @Data
 public class UpdateProfileRequest {
 
@@ -21,7 +19,8 @@ public class UpdateProfileRequest {
     @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid Indian mobile number")
     private String phone;
 
-    private LocalDate dateOfBirth;
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "Date of birth must be in YYYY-MM-DD format")
+    private String dateOfBirth;
 
     private Gender gender;
 }

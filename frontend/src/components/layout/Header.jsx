@@ -4,6 +4,7 @@ import { ShoppingCart, Search, MapPin, User, LogOut, Package, Wallet } from 'luc
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../stores/authStore';
 import { useCartStore } from '../../stores/cartStore';
+import { useProfileStore } from '../../stores/profileStore';
 import { authApi } from '../../api/auth.api';
 
 export default function Header() {
@@ -13,6 +14,7 @@ export default function Header() {
   const navigate = useNavigate();
 
   const { isLoggedIn, email, role, logout } = useAuthStore();
+  const profileImageUrl = useProfileStore(s => s.profileImageUrl);
   const itemCount = useCartStore(s => s.items.reduce((sum, i) => sum + i.quantity, 0));
 
   // Close menu when clicking outside
@@ -34,11 +36,14 @@ export default function Header() {
     }
   };
 
+  const clearProfile = useProfileStore(s => s.clearProfile);
+
   const handleLogout = async () => {
     try {
       await authApi.logout();
     } catch {}
     logout();
+    clearProfile();
     toast.success('Logged out');
     navigate('/login');
   };
@@ -99,9 +104,12 @@ export default function Header() {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowUserMenu(v => !v)}
-                className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-dark font-bold text-sm hover:bg-yellow-400 transition-colors"
+                className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-dark font-bold text-sm hover:bg-yellow-400 transition-colors overflow-hidden"
               >
-                {userInitial}
+                {profileImageUrl
+                  ? <img src={profileImageUrl} alt="avatar" className="w-full h-full object-cover" />
+                  : userInitial
+                }
               </button>
               {showUserMenu && (
                 <div className="absolute right-0 top-11 w-48 bg-white rounded-2xl shadow-lg border border-gray-100 py-2 z-50">

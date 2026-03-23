@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import com.blinkit.common.enums.Gender;
 
 import java.time.Instant;
-import java.time.LocalDate;
 
 @Document(collection = "user_profiles")
 @Data
@@ -33,7 +32,7 @@ public class UserProfile {
 
     private String phone;
     private String profileImageUrl;
-    private LocalDate dateOfBirth;
+    private String dateOfBirth;   // stored as "YYYY-MM-DD" string — no timezone conversion
     private Gender gender;
 
     @Builder.Default

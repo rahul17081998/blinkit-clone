@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, Edit2, Trash2, ToggleLeft, ToggleRight,
-  Package, Tag, Star, Layers, Save, X,
+  Package, Tag, Star, Layers, Save, X, Camera,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../../api/admin.api';
 import { productApi } from '../../../api/product.api';
+import ImageUploader from '../../../components/common/ImageUploader';
 
 // ── inline field editor ────────────────────────────────────────────────────
 function EditableField({ value, onSave, type = 'text', prefix, suffix }) {
@@ -78,6 +79,8 @@ export default function AdminProductDetailPage() {
   const [stockReason, setStockReason] = useState('');
   const [savingStock, setSavingStock] = useState(false);
   const [editModal, setEditModal] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const heroImgInputRef = useRef(null);
 
   useEffect(() => { load(); }, [productId]);
 
@@ -145,6 +148,32 @@ export default function AdminProductDetailPage() {
     }
   };
 
+  const handleHeroImageChange = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return; }
+
+    setPhotoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const { default: api } = await import('../../../api/axios');
+      const uploadRes = await api.post('/api/images/upload', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const url = uploadRes.data?.data?.url;
+      if (!url) throw new Error('No URL returned');
+      const res = await adminApi.updateProduct(productId, { images: [url] });
+      setProduct(res.data?.data ?? { ...product, thumbnailUrl: url, images: [url] });
+      toast.success('Product image updated');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Image update failed');
+    } finally {
+      setPhotoUploading(false);
+      if (heroImgInputRef.current) heroImgInputRef.current.value = '';
+    }
+  };
+
   const handleSaveStock = async () => {
     const delta = parseInt(stockDelta, 10);
     if (isNaN(delta) || delta === 0) { toast.error('Enter a non-zero quantity'); return; }
@@ -191,11 +220,34 @@ export default function AdminProductDetailPage() {
 
       {/* Hero card */}
       <div className="bg-white rounded-2xl p-5 flex flex-col sm:flex-row gap-5">
-        {/* Image */}
-        <div className="w-full sm:w-36 h-36 rounded-2xl bg-gray-50 flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-100">
-          {isReal
-            ? <img src={product.thumbnailUrl} alt={product.name} className="w-full h-full object-cover" onError={e => e.currentTarget.style.display = 'none'} />
-            : <Package size={40} className="text-gray-200" />}
+        {/* Image with camera overlay */}
+        <div className="relative w-full sm:w-36 h-36 flex-shrink-0 group">
+          <div className="w-full h-full rounded-2xl bg-gray-50 overflow-hidden flex items-center justify-center border border-gray-100">
+            {isReal
+              ? <img src={product.thumbnailUrl} alt={product.name} className="w-full h-full object-cover" onError={e => e.currentTarget.style.display = 'none'} />
+              : <Package size={40} className="text-gray-200" />}
+          </div>
+          <button
+            type="button"
+            onClick={() => heroImgInputRef.current?.click()}
+            disabled={photoUploading}
+            className="absolute inset-0 rounded-2xl bg-black/40 flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
+          >
+            {photoUploading
+              ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : <>
+                  <Camera size={22} className="text-white" />
+                  <span className="text-white text-xs font-semibold">Update</span>
+                </>
+            }
+          </button>
+          <input
+            ref={heroImgInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => handleHeroImageChange(e.target.files[0])}
+          />
         </div>
 
         {/* Core info */}
@@ -552,11 +604,11 @@ function ProductEditModal({ product, categories, onClose, onSaved }) {
             <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={2}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none" />
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Image URL</label>
-            <input value={form.thumbnailUrl} onChange={e => set('thumbnailUrl', e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" placeholder="https://..." />
-          </div>
+          <ImageUploader
+            label="Product Image"
+            value={form.thumbnailUrl}
+            onChange={url => set('thumbnailUrl', url)}
+          />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Country of Origin</label>

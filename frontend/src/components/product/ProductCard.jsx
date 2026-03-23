@@ -76,7 +76,7 @@ export default function ProductCard({ product }) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-400 mb-0.5">{unit}</p>
-        <p className="text-sm font-semibold text-gray-900 leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+        <p className="text-sm font-semibold text-gray-900 leading-tight line-clamp-2">
           {name}
         </p>
       </div>
@@ -109,7 +109,7 @@ export default function ProductCard({ product }) {
   return (
     <Link
       to={`/product/${productId}`}
-      className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col gap-2 hover:shadow-md transition-shadow group"
+      className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col gap-2 hover:shadow-md hover:scale-105 transition-all duration-200 group"
     >
       {cardContent}
     </Link>

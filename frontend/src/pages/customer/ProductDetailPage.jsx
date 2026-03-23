@@ -224,13 +224,13 @@ export default function ProductDetailPage() {
         {/* Product card */}
         <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden mb-4">
           {/* Image */}
-          <div className="relative aspect-square max-h-64 w-full bg-gray-50 flex items-center justify-center">
+          <div className="relative w-full bg-gray-50 flex items-center justify-center" style={{ height: '280px' }}>
             {product.discountPercent > 0 && (
               <span className="absolute top-3 left-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg z-10">
                 {product.discountPercent}% OFF
               </span>
             )}
-            <img src={imgSrc} alt={product.name} className="w-full h-full object-cover" />
+            <img src={imgSrc} alt={product.name} className="w-full h-full object-contain" />
           </div>
 
           {/* Details */}

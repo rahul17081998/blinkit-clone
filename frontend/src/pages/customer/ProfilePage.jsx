@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import {
   User, MapPin, Plus, Trash2, Star, Edit2, Check, X,
-  Home, Briefcase, Navigation, Phone, Calendar, Users,
+  Home, Briefcase, Navigation, Phone, Calendar, Users, Mail, Shield, Camera,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { userApi } from '../../api/user.api';
 import { useAuthStore } from '../../stores/authStore';
+import { useProfileStore } from '../../stores/profileStore';
 import Header from '../../components/layout/Header';
 import FloatingCartBar from '../../components/cart/FloatingCartBar';
 
@@ -153,8 +156,11 @@ function ProfileCard({ profile, email }) {
   const fullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || 'Your Name';
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm flex items-center gap-4">
-      <div className="w-14 h-14 rounded-2xl bg-yellow-400 flex items-center justify-center flex-shrink-0">
-        <span className="text-2xl font-black text-gray-900">{initials}</span>
+      <div className="w-14 h-14 rounded-2xl bg-yellow-400 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        {profile?.profileImageUrl
+          ? <img src={profile.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
+          : <span className="text-2xl font-black text-gray-900">{initials}</span>
+        }
       </div>
       <div className="min-w-0">
         <p className="text-base font-black text-gray-900 truncate">{fullName}</p>
@@ -249,6 +255,40 @@ function AddressesList({ addresses, loading, onAdd, onEdit, onDelete, onSetDefau
   );
 }
 
+// ── Date of Birth picker — calendar popup with month/year dropdowns ───────────
+
+function DateOfBirthPicker({ value, onChange }) {
+  const currentYear = new Date().getFullYear();
+
+  // Convert stored "YYYY-MM-DD" string ↔ Date object
+  const toDate   = str => str ? new Date(str + 'T00:00:00') : null;
+  const fromDate = dt  => dt
+    ? `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+    : '';
+
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
+        <Calendar size={11} /> Date of Birth
+      </label>
+      <DatePicker
+        selected={toDate(value)}
+        onChange={dt => onChange('dateOfBirth', fromDate(dt))}
+        dateFormat="dd MMM yyyy"
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
+        maxDate={new Date(currentYear - 10, 11, 31)}
+        minDate={new Date(currentYear - 100, 0, 1)}
+        placeholderText="Select date of birth"
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+        wrapperClassName="w-full"
+        popperPlacement="bottom-start"
+      />
+    </div>
+  );
+}
+
 // ── Profile edit form fields — defined OUTSIDE to keep stable identity ────────
 
 function ProfileField({ label, name, type, form, onChange, options, icon: Icon }) {
@@ -282,12 +322,19 @@ function ProfileField({ label, name, type, form, onChange, options, icon: Icon }
 
 // ── Right panel: edit profile form ───────────────────────────────────────────
 
-function EditProfilePanel({ profile, onSaved }) {
-  const [form, setForm]   = useState({
+const ROLE_LABELS = {
+  CUSTOMER:       { label: 'Customer',       color: 'bg-blue-100 text-blue-700' },
+  ADMIN:          { label: 'Admin',           color: 'bg-red-100 text-red-700' },
+  DELIVERY_AGENT: { label: 'Delivery Agent', color: 'bg-green-100 text-green-700' },
+};
+
+function EditProfilePanel({ profile, email, role, onSaved }) {
+  const [form, setForm]     = useState({
     firstName: '', lastName: '', phone: '', dateOfBirth: '', gender: '',
   });
-  const [saving, setSaving] = useState(false);
-  const [dirty, setDirty]   = useState(false);
+  const [saving, setSaving]         = useState(false);
+  const [dirty, setDirty]           = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   // Sync form when profile loads
   useEffect(() => {
@@ -319,6 +366,22 @@ function EditProfilePanel({ profile, onSaved }) {
       toast.error(err?.response?.data?.message || 'Failed to update profile');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    try {
+      const res = await userApi.uploadProfilePhoto(file);
+      onSaved(res.data?.data);
+      toast.success('Profile photo updated!');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Photo upload failed');
+    } finally {
+      setPhotoUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -355,35 +418,75 @@ function EditProfilePanel({ profile, onSaved }) {
       </div>
 
       <div className="p-6 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <ProfileField
-            label="First Name" name="firstName"
-            form={form} onChange={handleChange}
-          />
-          <ProfileField
-            label="Last Name" name="lastName"
-            form={form} onChange={handleChange}
-          />
+
+        {/* 0. Profile photo */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-yellow-400 overflow-hidden flex items-center justify-center">
+              {profile?.profileImageUrl
+                ? <img src={profile.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
+                : <span className="text-2xl font-black text-gray-900">
+                    {(profile?.firstName || email || 'U')[0].toUpperCase()}
+                  </span>
+              }
+            </div>
+            <label className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer shadow-md transition-colors ${
+              photoUploading ? 'bg-gray-300 cursor-not-allowed' : 'bg-gray-900 hover:bg-gray-700'
+            }`}>
+              {photoUploading
+                ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <Camera size={12} className="text-white" />
+              }
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} disabled={photoUploading} />
+            </label>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-800">Profile Photo</p>
+            <p className="text-xs text-gray-400 mt-0.5">JPG, PNG or WebP · Max 5 MB</p>
+          </div>
         </div>
 
-        <ProfileField
-          label="Phone Number" name="phone" type="tel"
-          form={form} onChange={handleChange}
-          icon={Phone}
-        />
+        <div className="border-t border-gray-100" />
 
-        <ProfileField
-          label="Date of Birth" name="dateOfBirth" type="date"
-          form={form} onChange={handleChange}
-          icon={Calendar}
-        />
+        {/* 1. Name */}
+        <div className="grid grid-cols-2 gap-4">
+          <ProfileField label="First Name" name="firstName" form={form} onChange={handleChange} />
+          <ProfileField label="Last Name"  name="lastName"  form={form} onChange={handleChange} />
+        </div>
 
-        <ProfileField
-          label="Gender" name="gender"
-          form={form} onChange={handleChange}
-          icon={Users}
-          options={['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']}
-        />
+        {/* 2. Email + Account Type (read-only) */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
+              <Mail size={11} /> Email
+            </label>
+            <div className="border border-gray-100 bg-gray-50 rounded-xl px-3 py-2.5 text-sm text-gray-500 truncate">
+              {email}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
+              <Shield size={11} /> Account Type
+            </label>
+            <div className="flex items-center border border-gray-100 bg-gray-50 rounded-xl px-3 py-2.5">
+              {role && (
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ROLE_LABELS[role]?.color || 'bg-gray-100 text-gray-600'}`}>
+                  {ROLE_LABELS[role]?.label || role}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Phone + Date of Birth */}
+        <div className="grid grid-cols-2 gap-4">
+          <ProfileField label="Phone Number" name="phone" type="tel" form={form} onChange={handleChange} icon={Phone} />
+          <DateOfBirthPicker value={form.dateOfBirth} onChange={handleChange} />
+        </div>
+
+        {/* 4. Gender */}
+        <ProfileField label="Gender" name="gender" form={form} onChange={handleChange} icon={Users}
+          options={['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']} />
 
         <div className="flex gap-3 pt-2">
           <button
@@ -410,9 +513,10 @@ function EditProfilePanel({ profile, onSaved }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-  const { email } = useAuthStore();
+  const { email, role } = useAuthStore();
+  const setProfile = useProfileStore(s => s.setProfile);
 
-  const [profile,       setProfile]       = useState(null);
+  const [profile,       setProfileState]  = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [addresses,     setAddresses]     = useState([]);
   const [addrLoading,   setAddrLoading]   = useState(true);
@@ -423,7 +527,11 @@ export default function ProfilePage() {
   // Load profile
   useEffect(() => {
     userApi.getProfile()
-      .then(r => setProfile(r.data?.data))
+      .then(r => {
+        const p = r.data?.data;
+        setProfile(p);       // update header avatar
+        setProfileState(p);
+      })
       .catch(() => toast.error('Failed to load profile'))
       .finally(() => setProfileLoading(false));
   }, []);
@@ -505,7 +613,9 @@ export default function ProfilePage() {
           <div className="flex-1 min-w-0">
             <EditProfilePanel
               profile={profileLoading ? null : profile}
-              onSaved={updated => setProfile(updated)}
+              email={email}
+              role={role}
+              onSaved={updated => { setProfileState(updated); setProfile(updated); }}
             />
           </div>
 
