@@ -6,6 +6,7 @@
 #   1. MongoDB Atlas  — insert doc, read, verify, delete
 #   2. Redis          — set key, get, verify, delete
 #   3. Kafka          — produce to connectivity.test topic, consume & verify
+#   4. Cloudinary CDN — ping cloud name, verify API credentials, upload/verify/delete test image
 #
 # Usage:  cd backend && ./infra-check.sh
 # ─────────────────────────────────────────────────────────────────
@@ -42,6 +43,9 @@ REDIS_HOST=$(_get_env "REDIS_HOST")
 REDIS_PORT=$(_get_env "REDIS_PORT")
 REDIS_PASSWORD=$(_get_env "REDIS_PASSWORD")
 KAFKA_BOOTSTRAP_SERVERS=$(_get_env "KAFKA_BOOTSTRAP_SERVERS")
+CLOUDINARY_CLOUD_NAME=$(_get_env "CLOUDINARY_CLOUD_NAME")
+CLOUDINARY_API_KEY=$(_get_env "CLOUDINARY_API_KEY")
+CLOUDINARY_API_SECRET=$(_get_env "CLOUDINARY_API_SECRET")
 
 REDIS_HOST="${REDIS_HOST:-localhost}"
 REDIS_PORT="${REDIS_PORT:-6379}"
@@ -265,6 +269,84 @@ else
   while IFS= read -r topic; do
     [ -n "$topic" ] && echo "    • $topic"
   done <<< "$ALL_TOPICS"
+fi
+
+# ─────────────────────────────────────────────────────────────────
+# 4. CLOUDINARY CDN
+# ─────────────────────────────────────────────────────────────────
+print_header "4. Cloudinary CDN Connectivity"
+
+if [ -z "$CLOUDINARY_CLOUD_NAME" ] || [ -z "$CLOUDINARY_API_KEY" ] || [ -z "$CLOUDINARY_API_SECRET" ]; then
+  echo -e "  ${RED}[SKIP]${NC} Cloudinary credentials missing in .env — skipping all Cloudinary checks"
+else
+  # Usage — verifies cloud name + API key + secret are all correct (Basic auth: api_key:api_secret)
+  USAGE_HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+    -u "${CLOUDINARY_API_KEY}:${CLOUDINARY_API_SECRET}" \
+    "https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/usage" 2>/dev/null)
+  if [ "$USAGE_HTTP" = "200" ]; then
+    check "Cloudinary API credentials valid" "pass" "API key + secret accepted by Cloudinary"
+  elif [ "$USAGE_HTTP" = "401" ]; then
+    check "Cloudinary API credentials valid" "fail" "HTTP 401 — wrong API key or secret, check .env"
+  else
+    check "Cloudinary API credentials valid" "fail" "HTTP ${USAGE_HTTP} — unexpected response"
+  fi
+
+  # Upload test image → verify CDN URL is reachable → delete from Cloudinary
+  TEST_IMAGE="${SCRIPT_DIR}/../resource/test_image.png"
+  if [ ! -f "$TEST_IMAGE" ]; then
+    check "Cloudinary image upload" "fail" "test file not found: resource/test_image.png"
+  else
+    # Generate a unique public_id so parallel runs don't collide
+    UPLOAD_TS=$(date +%s)
+    UPLOAD_PUBLIC_ID="blinkit/infra_check/connectivity_test_${UPLOAD_TS}"
+
+    # Sign: SHA1 of "public_id=<id>&timestamp=<ts><api_secret>"
+    UPLOAD_SIG=$(echo -n "public_id=${UPLOAD_PUBLIC_ID}&timestamp=${UPLOAD_TS}${CLOUDINARY_API_SECRET}" \
+      | openssl dgst -sha1 -hex | awk '{print $2}')
+
+    UPLOAD_RESPONSE=$(curl -s --max-time 15 \
+      -F "file=@${TEST_IMAGE}" \
+      -F "public_id=${UPLOAD_PUBLIC_ID}" \
+      -F "api_key=${CLOUDINARY_API_KEY}" \
+      -F "timestamp=${UPLOAD_TS}" \
+      -F "signature=${UPLOAD_SIG}" \
+      "https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload" 2>/dev/null)
+
+    UPLOADED_URL=$(echo "$UPLOAD_RESPONSE" | grep -o '"secure_url":"[^"]*"' | cut -d'"' -f4)
+
+    if [ -n "$UPLOADED_URL" ]; then
+      check "Cloudinary image upload" "pass" "test_image.png uploaded → public_id=${UPLOAD_PUBLIC_ID}"
+
+      # Verify the CDN URL is actually reachable
+      CDN_HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$UPLOADED_URL" 2>/dev/null)
+      if [ "$CDN_HTTP" = "200" ]; then
+        check "Cloudinary CDN delivery" "pass" "uploaded image served successfully from CDN edge"
+      else
+        check "Cloudinary CDN delivery" "fail" "HTTP ${CDN_HTTP} — image uploaded but CDN not serving it"
+      fi
+
+      # Delete the uploaded test image (clean up)
+      TS=$(date +%s)
+      DEL_SIG=$(echo -n "public_id=${UPLOAD_PUBLIC_ID}&timestamp=${TS}${CLOUDINARY_API_SECRET}" | openssl dgst -sha1 -hex | awk '{print $2}')
+      DELETE_RESPONSE=$(curl -s --max-time 10 \
+        -X POST \
+        -F "public_id=${UPLOAD_PUBLIC_ID}" \
+        -F "api_key=${CLOUDINARY_API_KEY}" \
+        -F "timestamp=${TS}" \
+        -F "signature=${DEL_SIG}" \
+        "https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/destroy" 2>/dev/null)
+
+      DEL_RESULT=$(echo "$DELETE_RESPONSE" | grep -o '"result":"[^"]*"' | cut -d'"' -f4)
+      if [ "$DEL_RESULT" = "ok" ]; then
+        check "Cloudinary image cleanup" "pass" "test image deleted from Cloudinary storage"
+      else
+        check "Cloudinary image cleanup" "fail" "delete returned '${DEL_RESULT}' — manually remove ${UPLOAD_PUBLIC_ID}"
+      fi
+    else
+      UPLOAD_ERROR=$(echo "$UPLOAD_RESPONSE" | grep -o '"message":"[^"]*"' | cut -d'"' -f4)
+      check "Cloudinary image upload" "fail" "${UPLOAD_ERROR:-no secure_url returned — check API credentials}"
+    fi
+  fi
 fi
 
 # ─────────────────────────────────────────────────────────────────
