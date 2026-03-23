@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Tag, ChevronRight, ShoppingBag, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, Tag, ChevronRight, ShoppingBag, ChevronDown, ChevronUp, Sparkles, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCartStore } from '../../stores/cartStore';
 import { productApi } from '../../api/product.api';
@@ -47,12 +47,22 @@ function CouponLabel({ coupon }) {
   return `${coupon.value} OFF`;
 }
 
-function CouponCard({ coupon, subtotal, applied, onApply, onRemove, loading }) {
-  const eligible = subtotal >= (coupon.minOrderAmount || 0);
-  const isApplied = applied === coupon.code;
-
+function CouponCard({ coupon, isBest, isApplied, onApply, onRemove, loading }) {
   return (
-    <div className={`border rounded-xl p-3 transition-all ${isApplied ? 'border-green-400 bg-green-50' : eligible ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 opacity-60'}`}>
+    <div className={`relative border rounded-xl p-3 transition-all cursor-pointer ${
+      isApplied
+        ? 'border-green-400 bg-green-50'
+        : isBest
+        ? 'border-yellow-400 bg-yellow-50'
+        : 'border-gray-200 bg-white hover:border-yellow-300'
+    }`}
+      onClick={() => !isApplied && onApply(coupon.code)}
+    >
+      {isBest && !isApplied && (
+        <span className="absolute -top-2 left-3 flex items-center gap-1 bg-yellow-400 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <Sparkles size={9} /> Best Value
+        </span>
+      )}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
@@ -62,23 +72,18 @@ function CouponCard({ coupon, subtotal, applied, onApply, onRemove, loading }) {
             </span>
           </div>
           {coupon.minOrderAmount > 0 && (
-            <p className={`text-xs ${eligible ? 'text-gray-500' : 'text-red-400'}`}>
-              {eligible
-                ? `✓ Min order ₹${coupon.minOrderAmount} — you're eligible!`
-                : `Min order ₹${coupon.minOrderAmount} (add ₹${(coupon.minOrderAmount - subtotal).toFixed(0)} more)`}
-            </p>
+            <p className="text-xs text-green-600">✓ Min order ₹{coupon.minOrderAmount} — eligible!</p>
           )}
         </div>
         {isApplied ? (
-          <button onClick={onRemove} className="text-xs text-red-500 font-semibold hover:underline flex-shrink-0">
+          <button onClick={e => { e.stopPropagation(); onRemove(); }}
+            className="text-xs text-red-500 font-semibold hover:underline flex-shrink-0">
             Remove
           </button>
         ) : (
-          <button
-            onClick={() => onApply(coupon.code)}
-            disabled={!eligible || loading}
-            className="text-xs font-bold text-primary disabled:text-gray-300 disabled:cursor-not-allowed hover:underline flex-shrink-0"
-          >
+          <button onClick={e => { e.stopPropagation(); onApply(coupon.code); }}
+            disabled={loading}
+            className="text-xs font-bold text-primary disabled:opacity-40 hover:underline flex-shrink-0">
             {loading ? '...' : 'Apply'}
           </button>
         )}
@@ -87,32 +92,77 @@ function CouponCard({ coupon, subtotal, applied, onApply, onRemove, loading }) {
   );
 }
 
+function NudgeCard({ nudge }) {
+  return (
+    <div className="border border-dashed border-gray-300 rounded-xl p-3 bg-gray-50 flex items-start gap-3">
+      <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <Lock size={14} className="text-gray-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="font-black text-sm text-gray-500 tracking-wide">{nudge.coupon.code}</span>
+          <span className="text-[10px] font-bold bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-md">
+            <CouponLabel coupon={nudge.coupon} />
+          </span>
+        </div>
+        <p className="text-xs text-yellow-600 font-semibold">{nudge.message}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function CartPage() {
   const navigate = useNavigate();
-  const items          = useCartStore(s => s.items);
-  const couponCode     = useCartStore(s => s.couponCode);
-  const discount       = useCartStore(s => s.discount);
-  const getSubtotal    = useCartStore(s => s.getSubtotal);
-  const getDeliveryFee = useCartStore(s => s.getDeliveryFee);
-  const getTotal       = useCartStore(s => s.getTotal);
-  const applyPromo     = useCartStore(s => s.applyPromo);
-  const removePromo    = useCartStore(s => s.removePromo);
+  const items                = useCartStore(s => s.items);
+  const couponCode           = useCartStore(s => s.couponCode);
+  const discount             = useCartStore(s => s.discount);
+  const deliveryCouponCode   = useCartStore(s => s.deliveryCouponCode);
+  const freeDelivery         = useCartStore(s => s.freeDelivery);
+  const getSubtotal          = useCartStore(s => s.getSubtotal);
+  const getDeliveryFee       = useCartStore(s => s.getDeliveryFee);
+  const getTotal             = useCartStore(s => s.getTotal);
+  const applyPromo           = useCartStore(s => s.applyPromo);
+  const removePromo          = useCartStore(s => s.removePromo);
+  const removeDeliveryPromo  = useCartStore(s => s.removeDeliveryPromo);
 
-  const [coupons, setCoupons]         = useState([]);
+  const [applicable, setApplicable]   = useState([]);
+  const [bestCouponId, setBestCouponId] = useState(null);
+  const [nudge, setNudge]             = useState(null);
   const [showManual, setShowManual]   = useState(false);
   const [promoInput, setPromoInput]   = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
-  const [applying, setApplying]       = useState(null); // track which coupon is being applied
+  const [applying, setApplying]       = useState(null);
+  const autoApplied = useRef(false);
 
   const subtotal    = getSubtotal();
   const deliveryFee = getDeliveryFee();
   const total       = getTotal();
 
+  // Fetch applicable coupons whenever subtotal changes
   useEffect(() => {
-    productApi.getActiveCoupons()
-      .then(res => setCoupons(res.data.data || []))
+    if (subtotal <= 0) { setApplicable([]); setBestCouponId(null); setNudge(null); return; }
+    productApi.getApplicableCoupons(subtotal)
+      .then(res => {
+        const d = res.data.data;
+        setApplicable(d?.applicable || []);
+        setBestCouponId(d?.bestCouponId || null);
+        setNudge(d?.nudge || null);
+      })
       .catch(() => {});
-  }, []);
+  }, [subtotal]);
+
+  // Auto-apply best NON-delivery coupon on first load (only once, only if nothing applied yet)
+  useEffect(() => {
+    if (!autoApplied.current && !couponCode && bestCouponId && applicable.length > 0) {
+      const best = applicable.find(c => c.id === bestCouponId && c.type !== 'FREE_DELIVERY');
+      if (best) {
+        autoApplied.current = true;
+        applyPromo(best.code).then(res => {
+          if (res.success) toast.success(`Best coupon ${best.code} auto-applied!`);
+        });
+      }
+    }
+  }, [bestCouponId, applicable, couponCode, applyPromo]);
 
   const handleApply = async (code) => {
     setApplying(code);
@@ -122,8 +172,12 @@ export default function CartPage() {
     else if (res.message) toast.error(res.message);
   };
 
-  const handleRemove = async () => {
-    await removePromo();
+  const handleRemove = async (couponType) => {
+    if (couponType === 'FREE_DELIVERY') {
+      await removeDeliveryPromo();
+    } else {
+      await removePromo();
+    }
     toast.success('Coupon removed');
   };
 
@@ -167,25 +221,41 @@ export default function CartPage() {
         </div>
 
         {/* Coupons */}
+        {(applicable.length > 0 || nudge) && (
         <div className="bg-white rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <Tag size={16} className="text-primary" />
             <h3 className="text-sm font-bold text-gray-900">Coupons & Offers</h3>
+            {applicable.length > 0 && (
+              <span className="ml-auto text-xs text-gray-400">{applicable.length} available</span>
+            )}
           </div>
 
-          {coupons.length > 0 ? (
-            <div className="space-y-2">
-              {coupons.map(coupon => (
-                <CouponCard
-                  key={coupon.code}
-                  coupon={coupon}
-                  subtotal={subtotal}
-                  applied={couponCode}
-                  onApply={handleApply}
-                  onRemove={handleRemove}
-                  loading={applying === coupon.code}
-                />
-              ))}
+          {applicable.length > 0 ? (
+            <div className="space-y-2 mb-3">
+              {applicable.map(coupon => {
+                const isDelivery = coupon.type === 'FREE_DELIVERY';
+                const isApplied  = isDelivery
+                  ? deliveryCouponCode === coupon.code
+                  : couponCode === coupon.code;
+                // Best badge only on the best non-delivery coupon
+                const isBest = !isDelivery && coupon.id === bestCouponId;
+                return (
+                  <CouponCard
+                    key={coupon.code}
+                    coupon={coupon}
+                    isBest={isBest}
+                    isApplied={isApplied}
+                    onApply={handleApply}
+                    onRemove={() => handleRemove(coupon.type)}
+                    loading={applying === coupon.code}
+                  />
+                );
+              })}
+            </div>
+          ) : nudge ? (
+            <div className="mb-3">
+              <NudgeCard nudge={nudge} />
             </div>
           ) : null}
 
@@ -218,6 +288,7 @@ export default function CartPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* Bill summary */}
         <div className="bg-white rounded-2xl p-4 space-y-2">
@@ -235,10 +306,13 @@ export default function CartPage() {
           <div className="flex justify-between text-sm text-gray-600">
             <span>Delivery Fee</span>
             {deliveryFee === 0
-              ? <span className="text-green-600 font-semibold">FREE</span>
+              ? <span className="text-green-600 font-semibold">FREE {freeDelivery ? '🎉' : ''}</span>
               : <span>₹{deliveryFee}</span>}
           </div>
-          {deliveryFee > 0 && (
+          {freeDelivery && (
+            <p className="text-xs text-green-500">✓ Free delivery applied via {couponCode}</p>
+          )}
+          {deliveryFee > 0 && !freeDelivery && subtotal < 199 && (
             <p className="text-xs text-gray-400">Add ₹{(199 - subtotal).toFixed(0)} more for free delivery</p>
           )}
           <div className="border-t border-gray-100 pt-2 flex justify-between text-base font-bold text-gray-900">

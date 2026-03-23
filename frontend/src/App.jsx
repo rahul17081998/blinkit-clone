@@ -24,6 +24,8 @@ import CartPage from './pages/customer/CartPage';
 import CheckoutPage from './pages/customer/CheckoutPage';
 import OrdersPage from './pages/customer/OrdersPage';
 import OrderDetailPage from './pages/customer/OrderDetailPage';
+import ProfilePage from './pages/customer/ProfilePage';
+import WalletPage from './pages/customer/WalletPage';
 
 // Admin pages (stub)
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -81,6 +83,8 @@ function AppRoutes() {
         <Route path="/checkout"          element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
         <Route path="/orders"            element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
         <Route path="/orders/:orderId"   element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
+        <Route path="/profile"           element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/wallet"            element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
 
         {/* ── Admin Routes ────────────────────────────────── */}
         <Route

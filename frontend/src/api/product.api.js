@@ -13,4 +13,5 @@ export const productApi = {
   getCategories: () => api.get('/api/categories'),
   getInventory: (productId) => api.get(`/api/inventory/${productId}`),
   getActiveCoupons: () => api.get('/api/coupons/active'),
+  getApplicableCoupons: (cartTotal) => api.get('/api/coupons/applicable', { params: { cartTotal } }),
 };

@@ -250,6 +250,16 @@ public class OrderService {
     private String generateOrderNumber() {
         String date = LocalDate.now(IST).format(DATE_FMT);
         String counterKey = "order:counter:" + date;
+
+        // Seed Redis from MongoDB if key is missing (e.g. after Redis restart)
+        if (!Boolean.TRUE.equals(redisTemplate.hasKey(counterKey))) {
+            long existingCount = orderRepository.countByOrderNumberStartingWith("^BLK-" + date + "-");
+            if (existingCount > 0) {
+                redisTemplate.opsForValue().set(counterKey, String.valueOf(existingCount));
+                log.info("Seeded order counter for {} from MongoDB: {}", date, existingCount);
+            }
+        }
+
         Long seq = redisTemplate.opsForValue().increment(counterKey);
         redisTemplate.expire(counterKey, Duration.ofDays(2));
         return String.format("BLK-%s-%04d", date, seq);

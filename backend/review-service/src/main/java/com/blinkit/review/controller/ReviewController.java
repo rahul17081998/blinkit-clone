@@ -73,7 +73,25 @@ public class ReviewController {
                 reviewService.getProductRatingSummary(productId)));
     }
 
+    // ── Admin endpoints ────────────────────────────────────────────
+
+    @GetMapping("/admin/all")
+    public ResponseEntity<ApiResponse<Page<ReviewResponse>>> getAllReviews(
+            @RequestHeader("X-User-Role") String role,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        requireAdmin(role);
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(ApiResponse.ok("Reviews fetched", reviewService.getAllReviews(pageable)));
+    }
+
     // ── Helper ─────────────────────────────────────────────────────
+
+    private void requireAdmin(String role) {
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
+        }
+    }
 
     private void requireCustomer(String role) {
         if (!"CUSTOMER".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role)) {

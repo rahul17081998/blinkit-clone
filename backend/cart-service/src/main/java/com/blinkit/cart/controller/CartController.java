@@ -87,4 +87,12 @@ public class CartController {
                 ApiResponse.ok(ApiResponseCode.PROMO_REMOVED.getMessage(),
                         cartService.removePromo(userId)));
     }
+
+    @DeleteMapping("/promo/delivery")
+    public ResponseEntity<ApiResponse<CartResponse>> removeDeliveryPromo(
+            @RequestHeader("X-User-Id") String userId) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(ApiResponseCode.PROMO_REMOVED.getMessage(),
+                        cartService.removeDeliveryPromo(userId)));
+    }
 }

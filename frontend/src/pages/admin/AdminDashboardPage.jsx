@@ -8,6 +8,7 @@ import {
   Ticket,
   Truck,
   CreditCard,
+  MessageSquare,
   LogOut,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -24,6 +25,7 @@ import AdminProductDetailPage from './sections/AdminProductDetailPage';
 import CouponsSection from './sections/CouponsSection';
 import DeliverySection from './sections/DeliverySection';
 import PaymentsSection from './sections/PaymentsSection';
+import ReviewsSection from './sections/ReviewsSection';
 
 const NAV_ITEMS = [
   { label: 'Overview',   path: '/admin',           icon: LayoutDashboard, end: true },
@@ -34,6 +36,7 @@ const NAV_ITEMS = [
   { label: 'Coupons',    path: '/admin/coupons',    icon: Ticket },
   { label: 'Delivery',   path: '/admin/delivery',   icon: Truck },
   { label: 'Payments',   path: '/admin/payments',   icon: CreditCard },
+  { label: 'Reviews',    path: '/admin/reviews',    icon: MessageSquare },
 ];
 
 export default function AdminDashboardPage() {
@@ -128,6 +131,7 @@ export default function AdminDashboardPage() {
             <Route path="coupons" element={<CouponsSection />} />
             <Route path="delivery" element={<DeliverySection />} />
             <Route path="payments" element={<PaymentsSection />} />
+            <Route path="reviews" element={<ReviewsSection />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </main>

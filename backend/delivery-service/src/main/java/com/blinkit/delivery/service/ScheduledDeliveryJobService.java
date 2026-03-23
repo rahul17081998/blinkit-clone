@@ -7,14 +7,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
  * Scheduled jobs that keep the delivery lifecycle reliable:
  *
- *  1. retryUnassignedTasks   — every 30 s: try to assign a partner to UNASSIGNED tasks
+ *  1. retryUnassignedTasks    — every 30 s: try to assign a real partner to UNASSIGNED tasks
  *  2. releaseCooldownPartners — every 60 s: mark partners available after cooldown expires
  *  3. autoCompleteStale       — every 5 m:  auto-mark DELIVERED for tasks past their ETA
+ *  4. simulateDeliveryProgress — every 30 s: advance task statuses for demo/simulation
+ *     UNASSIGNED→ASSIGNED (after 30 s), ASSIGNED→PICKED_UP (after 60 s),
+ *     PICKED_UP→OUT_FOR_DELIVERY (after 60 s), OUT_FOR_DELIVERY→DELIVERED (after 60 s)
  */
 @Slf4j
 @Service
@@ -64,5 +68,48 @@ public class ScheduledDeliveryJobService {
         for (DeliveryTask task : stale) {
             taskService.autoCompleteTask(task);
         }
+    }
+
+    // ── 4. Simulation: advance delivery task statuses automatically ──
+
+    @Scheduled(fixedDelay = 30_000)   // every 30 seconds
+    public void simulateDeliveryProgress() {
+        Instant now = Instant.now();
+
+        // UNASSIGNED → ASSIGNED  (task created > 30 s ago and still unassigned)
+        List<DeliveryTask> unassigned = taskService.getTasksByStatusUpdatedBefore(
+                "UNASSIGNED", now.minusSeconds(30));
+        if (!unassigned.isEmpty()) {
+            DeliveryPartner simPartner = partnerService.findOrCreateSimulationPartner();
+            for (DeliveryTask t : unassigned) {
+                taskService.simulateAssignTask(t, simPartner.getPartnerId());
+            }
+            log.info("Simulation: assigned {} UNASSIGNED task(s) to partner {}",
+                    unassigned.size(), simPartner.getPartnerId());
+        }
+
+        // ASSIGNED → PICKED_UP  (assigned > 60 s ago)
+        List<DeliveryTask> assigned = taskService.getTasksByStatusUpdatedBefore(
+                "ASSIGNED", now.minusSeconds(60));
+        for (DeliveryTask t : assigned) {
+            taskService.simulateAdvanceTask(t, "PICKED_UP");
+        }
+        if (!assigned.isEmpty()) log.info("Simulation: {} ASSIGNED → PICKED_UP", assigned.size());
+
+        // PICKED_UP → OUT_FOR_DELIVERY  (picked up > 60 s ago)
+        List<DeliveryTask> pickedUp = taskService.getTasksByStatusUpdatedBefore(
+                "PICKED_UP", now.minusSeconds(60));
+        for (DeliveryTask t : pickedUp) {
+            taskService.simulateAdvanceTask(t, "OUT_FOR_DELIVERY");
+        }
+        if (!pickedUp.isEmpty()) log.info("Simulation: {} PICKED_UP → OUT_FOR_DELIVERY", pickedUp.size());
+
+        // OUT_FOR_DELIVERY → DELIVERED  (out > 60 s ago)
+        List<DeliveryTask> outForDelivery = taskService.getTasksByStatusUpdatedBefore(
+                "OUT_FOR_DELIVERY", now.minusSeconds(60));
+        for (DeliveryTask t : outForDelivery) {
+            taskService.simulateAdvanceTask(t, "DELIVERED");
+        }
+        if (!outForDelivery.isEmpty()) log.info("Simulation: {} OUT_FOR_DELIVERY → DELIVERED", outForDelivery.size());
     }
 }

@@ -23,8 +23,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.blinkit.coupon.dto.response.ApplicableCouponsResponse;
+import com.blinkit.coupon.dto.response.CouponNudge;
+
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -142,6 +146,76 @@ public class CouponService {
                 .collect(Collectors.toList());
     }
 
+    // ── Public: Applicable coupons for a given cart total ────────────
+
+    public ApplicableCouponsResponse getApplicableCoupons(double cartTotal) {
+        Instant now = Instant.now();
+        List<Coupon> active = couponRepository
+                .findByIsActiveTrueAndValidFromBeforeAndValidUntilAfter(now, now);
+
+        // Split into applicable vs inapplicable
+        List<Coupon> applicable = active.stream()
+                .filter(c -> cartTotal >= (c.getMinOrderAmount() != null ? c.getMinOrderAmount() : 0.0))
+                .filter(c -> c.getUsageLimit() == null || c.getUsedCount() < c.getUsageLimit())
+                .sorted(Comparator
+                        .comparingDouble((Coupon c) -> -computeSaving(c, cartTotal))
+                        .thenComparingDouble(c -> c.getMinOrderAmount() != null ? c.getMinOrderAmount() : 0.0))
+                .limit(3)
+                .collect(Collectors.toList());
+
+        String bestCouponId = applicable.isEmpty() ? null : applicable.get(0).getId();
+
+        // Build nudge only when nothing is applicable
+        CouponNudge nudge = applicable.isEmpty()
+                ? active.stream()
+                        .filter(c -> c.getMinOrderAmount() != null && c.getMinOrderAmount() > cartTotal)
+                        .filter(c -> c.getUsageLimit() == null || c.getUsedCount() < c.getUsageLimit())
+                        .min(Comparator
+                                .comparingDouble((Coupon c) -> c.getMinOrderAmount() - cartTotal)
+                                .thenComparingDouble(c -> -computeSaving(c, c.getMinOrderAmount())))
+                        .map(c -> {
+                            double needed = Math.ceil(c.getMinOrderAmount() - cartTotal);
+                            return CouponNudge.builder()
+                                    .coupon(CouponResponse.from(c))
+                                    .amountNeeded(needed)
+                                    .message(buildNudgeMessage(c, needed))
+                                    .build();
+                        })
+                        .orElse(null)
+                : null;
+
+        return ApplicableCouponsResponse.builder()
+                .applicable(applicable.stream().map(CouponResponse::from).collect(Collectors.toList()))
+                .bestCouponId(bestCouponId)
+                .nudge(nudge)
+                .build();
+    }
+
+    private double computeSaving(Coupon c, double cartTotal) {
+        if (c.getType() == null) return 0.0;
+        return switch (c.getType()) {
+            case PERCENT -> {
+                double raw = cartTotal * c.getValue() / 100.0;
+                yield c.getMaxDiscount() != null ? Math.min(raw, c.getMaxDiscount()) : raw;
+            }
+            case FLAT, FIRST_ORDER -> c.getValue() != null ? c.getValue() : 0.0;
+            case FREE_DELIVERY -> 40.0;
+        };
+    }
+
+    private String buildNudgeMessage(Coupon c, double needed) {
+        String benefit = switch (c.getType()) {
+            case FREE_DELIVERY -> "FREE DELIVERY";
+            case FLAT, FIRST_ORDER -> "₹" + c.getValue().intValue() + " OFF";
+            case PERCENT -> {
+                String s = c.getValue().intValue() + "% OFF";
+                if (c.getMaxDiscount() != null) s += " (up to ₹" + c.getMaxDiscount().intValue() + ")";
+                yield s;
+            }
+        };
+        return "Add ₹" + (int) needed + " more to unlock " + benefit + " with " + c.getCode() + "!";
+    }
+
     // ── Internal: Validate ────────────────────────────────────────────
 
     public ValidateCouponResponse validate(ValidateCouponRequest req) {
@@ -178,11 +252,7 @@ public class CouponService {
             return ValidateCouponResponse.invalid("Coupon usage limit has been reached");
         }
 
-        // Per-user usage check
-        long userUsageCount = couponUsageRepository.countByCouponIdAndUserId(coupon.getId(), req.getUserId());
-        if (userUsageCount >= coupon.getPerUserLimit()) {
-            return ValidateCouponResponse.invalid("You have already used this coupon");
-        }
+        // Per-user usage limit is intentionally not enforced — coupons can be used any number of times per user.
 
         // Calculate discount
         return calculateDiscount(coupon, req.getCartTotal());

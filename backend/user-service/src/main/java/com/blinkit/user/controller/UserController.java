@@ -66,6 +66,16 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.ok("Address fetched", userService.getAddressById(addressId)));
     }
 
+    @GetMapping("/delivery/address/{addressId}")
+    public ResponseEntity<ApiResponse<Address>> getAddressByIdForAgent(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable String addressId) {
+        if (!"DELIVERY_AGENT".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role))
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Access denied");
+        return ResponseEntity.ok(ApiResponse.ok("Address fetched", userService.getAddressById(addressId)));
+    }
+
     // ── Addresses ─────────────────────────────────────────────────
 
     @Operation(summary = "List my addresses")

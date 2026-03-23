@@ -78,6 +78,10 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
+    public Page<ReviewResponse> getAllReviews(Pageable pageable) {
+        return reviewRepository.findAll(pageable).map(ReviewResponse::from);
+    }
+
     public void deleteReview(String userId, String role, String reviewId) {
         Review review = reviewRepository.findByReviewId(reviewId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));

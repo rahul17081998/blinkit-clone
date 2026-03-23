@@ -4,15 +4,17 @@ import { cartApi } from '../api/cart.api';
 export const useCartStore = create((set, get) => ({
   cartId: null,
   items: [],        // [{ productId, productName, thumbnailUrl, sellingPrice, mrp, unit, quantity }]
-  couponCode: null,
+  couponCode: null,         // discount coupon (FLAT / PERCENT)
   discount: 0,
-  deliveryFee: 0,
+  deliveryCouponCode: null, // free-delivery coupon (FREE_DELIVERY)
+  freeDelivery: false,
 
   // ── Derived ─────────────────────────────────────────────────────────
   getItemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
   getItemQty:   (productId) => get().items.find(i => i.productId === productId)?.quantity || 0,
   getSubtotal:  () => get().items.reduce((sum, i) => sum + i.sellingPrice * i.quantity, 0),
   getDeliveryFee: () => {
+    if (get().freeDelivery) return 0;
     const subtotal = get().getSubtotal();
     return subtotal >= 199 ? 0 : 20;
   },
@@ -90,7 +92,7 @@ export const useCartStore = create((set, get) => ({
   },
 
   clearCart: async () => {
-    set({ cartId: null, items: [], couponCode: null, discount: 0 });
+    set({ cartId: null, items: [], couponCode: null, discount: 0, deliveryCouponCode: null, freeDelivery: false });
     try { await cartApi.clearCart(); } catch (e) { console.error(e); }
   },
 
@@ -102,10 +104,15 @@ export const useCartStore = create((set, get) => ({
       }
       const cart = res.data.data;
       if (!cart) return { success: false, message: 'Invalid coupon' };
-      set({ couponCode: cart.couponCode, discount: cart.couponDiscount || 0 });
+      set({
+        couponCode:         cart.couponCode         || null,
+        discount:           cart.couponDiscount      || 0,
+        deliveryCouponCode: cart.deliveryCouponCode  || null,
+        freeDelivery:       cart.freeDelivery        || false,
+      });
       return { success: true };
     } catch (e) {
-      if (e.isAuthError) return { success: false, message: '' }; // handled by interceptor
+      if (e.isAuthError) return { success: false, message: '' };
       const msg = e.response?.data?.message || e.message || 'Invalid coupon';
       return { success: false, message: msg };
     }
@@ -115,6 +122,13 @@ export const useCartStore = create((set, get) => ({
     try {
       await cartApi.removePromo();
       set({ couponCode: null, discount: 0 });
+    } catch (e) { console.error(e); }
+  },
+
+  removeDeliveryPromo: async () => {
+    try {
+      await cartApi.removeDeliveryPromo();
+      set({ deliveryCouponCode: null, freeDelivery: false });
     } catch (e) { console.error(e); }
   },
 
@@ -135,8 +149,10 @@ export const useCartStore = create((set, get) => ({
           quantity:     i.quantity,
           isAvailable:  i.isAvailable,
         })),
-        couponCode: cart.couponCode      || null,
-        discount:   cart.couponDiscount  || 0,  // backend field: couponDiscount
+        couponCode:         cart.couponCode        || null,
+        discount:           cart.couponDiscount    || 0,
+        deliveryCouponCode: cart.deliveryCouponCode || null,
+        freeDelivery:       cart.freeDelivery      || false,
       });
     } catch (e) {
       console.error('Cart load error:', e);

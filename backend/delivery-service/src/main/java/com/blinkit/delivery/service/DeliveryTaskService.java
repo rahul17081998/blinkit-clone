@@ -160,11 +160,22 @@ public class DeliveryTaskService {
     // ── Customer tracking ─────────────────────────────────────────
 
     public DeliveryTaskResponse trackByOrderId(String orderId) {
-        return DeliveryTaskResponse.from(
-                taskRepository.findByOrderId(orderId)
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                                "Delivery task not found for order"))
-        );
+        DeliveryTask task = taskRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Delivery task not found for order"));
+        DeliveryTaskResponse resp = DeliveryTaskResponse.from(task);
+        if (task.getDeliveryPartnerId() != null) {
+            try {
+                DeliveryPartner partner = partnerService.findByPartnerId(task.getDeliveryPartnerId());
+                resp.setPartnerName(partner.getName());
+                resp.setPartnerPhone(partner.getPhone());
+                resp.setVehicleType(partner.getVehicleType());
+                resp.setVehicleNumber(partner.getVehicleNumber());
+            } catch (Exception e) {
+                log.warn("Could not enrich partner details for task {}: {}", task.getTaskId(), e.getMessage());
+            }
+        }
+        return resp;
     }
 
     // ── Admin ─────────────────────────────────────────────────────
@@ -280,6 +291,55 @@ public class DeliveryTaskService {
     /** All stale in-progress tasks past their estimated delivery time. */
     public List<DeliveryTask> getStaleInProgressTasks() {
         return taskRepository.findStaleInProgressTasks(Instant.now());
+    }
+
+    /** Tasks in a given status whose updatedAt is before the threshold — used by simulation. */
+    public List<DeliveryTask> getTasksByStatusUpdatedBefore(String status, Instant before) {
+        return taskRepository.findByStatusAndUpdatedAtBefore(status, before);
+    }
+
+    /** Simulation: force-assign a partner to an UNASSIGNED task without availability checks. */
+    public void simulateAssignTask(DeliveryTask task, String partnerId) {
+        task.setDeliveryPartnerId(partnerId);
+        task.setStatus("ASSIGNED");
+        taskRepository.save(task);
+
+        eventPublisher.publishStatusUpdated(DeliveryStatusUpdatedEvent.builder()
+                .taskId(task.getTaskId())
+                .orderId(task.getOrderId())
+                .deliveryPartnerId(partnerId)
+                .deliveryStatus("ASSIGNED")
+                .updatedAt(Instant.now())
+                .build());
+
+        log.info("Simulation: assigned partner {} to task {} (orderId={})",
+                partnerId, task.getTaskId(), task.getOrderId());
+    }
+
+    /** Simulation: advance a task to the next status and publish Kafka event. */
+    public void simulateAdvanceTask(DeliveryTask task, String newStatus) {
+        task.setStatus(newStatus);
+
+        if ("PICKED_UP".equals(newStatus)) {
+            task.setActualPickupAt(Instant.now());
+        } else if ("DELIVERED".equals(newStatus)) {
+            task.setActualDeliveryAt(Instant.now());
+            if (task.getDeliveryPartnerId() != null) {
+                applyPostDeliveryToPartner(task.getDeliveryPartnerId());
+            }
+        }
+
+        taskRepository.save(task);
+
+        eventPublisher.publishStatusUpdated(DeliveryStatusUpdatedEvent.builder()
+                .taskId(task.getTaskId())
+                .orderId(task.getOrderId())
+                .deliveryPartnerId(task.getDeliveryPartnerId())
+                .deliveryStatus(newStatus)
+                .updatedAt(Instant.now())
+                .build());
+
+        log.info("Simulation: task {} → {} (orderId={})", task.getTaskId(), newStatus, task.getOrderId());
     }
 
     // ── Private helpers ───────────────────────────────────────────

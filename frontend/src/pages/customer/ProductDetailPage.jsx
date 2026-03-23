@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Star, Package } from 'lucide-react';
+import { ChevronLeft, Star, Package, Trash2, Send } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { productApi } from '../../api/product.api';
 import { reviewApi } from '../../api/review.api';
 import { useAuthStore } from '../../stores/authStore';
@@ -34,6 +35,27 @@ function StarDisplay({ rating, size = 14 }) {
   );
 }
 
+function StarPicker({ value, onChange }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map(s => (
+        <button key={s} type="button"
+          onClick={() => onChange(s)}
+          onMouseEnter={() => setHovered(s)}
+          onMouseLeave={() => setHovered(0)}
+          className="focus:outline-none"
+        >
+          <Star size={24}
+            className={s <= (hovered || value)
+              ? 'text-yellow-400 fill-yellow-400'
+              : 'text-gray-300 fill-gray-300'} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function ProductDetailPage() {
   const { productId } = useParams();
   const { isLoggedIn } = useAuthStore();
@@ -41,22 +63,43 @@ export default function ProductDetailPage() {
   const [inventory, setInventory] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [reviewSummary, setReviewSummary] = useState(null);
+  const [reviewPage, setReviewPage] = useState(0);
+  const [reviewTotalPages, setReviewTotalPages] = useState(1);
+  const [loadingMoreReviews, setLoadingMoreReviews] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [myReview, setMyReview] = useState(null);
+
+  // Write-review form state
+  const [formRating, setFormRating] = useState(0);
+  const [formTitle, setFormTitle] = useState('');
+  const [formComment, setFormComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const [prodRes, invRes, revRes, sumRes] = await Promise.allSettled([
+        const calls = [
           productApi.getProduct(productId),
           productApi.getInventory(productId),
           reviewApi.getProductReviews(productId, { page: 0, size: 5 }),
           reviewApi.getProductSummary(productId),
-        ]);
+        ];
+        if (isLoggedIn) calls.push(reviewApi.getMyReviews());
+        const [prodRes, invRes, revRes, sumRes, myRes] = await Promise.allSettled(calls);
         if (prodRes.status === 'fulfilled') setProduct(prodRes.value.data.data);
         if (invRes.status === 'fulfilled') setInventory(invRes.value.data.data);
-        if (revRes.status === 'fulfilled') setReviews(revRes.value.data.data?.content || []);
+        if (revRes.status === 'fulfilled') {
+          const d = revRes.value.data.data;
+          setReviews(d?.content || []);
+          setReviewTotalPages(d?.totalPages || 1);
+        }
         if (sumRes.status === 'fulfilled') setReviewSummary(sumRes.value.data.data);
+        if (myRes?.status === 'fulfilled') {
+          const mine = (myRes.value.data.data || []).find(r => r.productId === productId) || null;
+          setMyReview(mine);
+          if (mine) { setFormRating(mine.rating); setFormTitle(mine.title || ''); setFormComment(mine.comment || ''); }
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -64,7 +107,74 @@ export default function ProductDetailPage() {
       }
     };
     load();
-  }, [productId]);
+  }, [productId, isLoggedIn]);
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!formRating) return toast.error('Please select a rating');
+    if (!formComment.trim()) return toast.error('Please write a comment');
+    setSubmitting(true);
+    try {
+      const res = await reviewApi.submitReview({ productId, rating: formRating, title: formTitle, comment: formComment });
+      const saved = res.data.data;
+      setMyReview(saved);
+      toast.success(myReview ? 'Review updated!' : 'Review submitted!');
+      // Refresh review list + summary
+      const [revRes, sumRes] = await Promise.allSettled([
+        reviewApi.getProductReviews(productId, { page: 0, size: 5 }),
+        reviewApi.getProductSummary(productId),
+      ]);
+      if (revRes.status === 'fulfilled') {
+        const d = revRes.value.data.data;
+        setReviews(d?.content || []);
+        setReviewTotalPages(d?.totalPages || 1);
+        setReviewPage(0);
+      }
+      if (sumRes.status === 'fulfilled') setReviewSummary(sumRes.value.data.data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteReview = async () => {
+    if (!myReview) return;
+    try {
+      await reviewApi.deleteReview(myReview.reviewId);
+      setMyReview(null);
+      setFormRating(0); setFormTitle(''); setFormComment('');
+      toast.success('Review deleted');
+      const [revRes, sumRes] = await Promise.allSettled([
+        reviewApi.getProductReviews(productId, { page: 0, size: 5 }),
+        reviewApi.getProductSummary(productId),
+      ]);
+      if (revRes.status === 'fulfilled') {
+        const d = revRes.value.data.data;
+        setReviews(d?.content || []);
+        setReviewTotalPages(d?.totalPages || 1);
+        setReviewPage(0);
+      }
+      if (sumRes.status === 'fulfilled') setReviewSummary(sumRes.value.data.data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete review');
+    }
+  };
+
+  const loadMoreReviews = async () => {
+    setLoadingMoreReviews(true);
+    try {
+      const res = await reviewApi.getProductReviews(productId, { page: reviewPage + 1, size: 5 });
+      const d = res.data.data;
+      setReviews(prev => [...prev, ...(d?.content || [])]);
+      setReviewPage(p => p + 1);
+      setReviewTotalPages(d?.totalPages || 1);
+    } catch {
+      toast.error('Failed to load more reviews');
+    } finally {
+      setLoadingMoreReviews(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -158,10 +268,10 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Reviews section */}
-        <div className="bg-white rounded-3xl border border-gray-100 p-4">
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-white rounded-3xl border border-gray-100 p-4 space-y-4">
+          <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-gray-900">Ratings & Reviews</h2>
-            {reviewSummary && (
+            {reviewSummary && reviewSummary.totalReviews > 0 && (
               <div className="flex items-center gap-1.5">
                 <StarDisplay rating={reviewSummary.averageRating} />
                 <span className="text-sm font-semibold text-gray-700">
@@ -172,29 +282,75 @@ export default function ProductDetailPage() {
             )}
           </div>
 
+          {/* Write / edit review */}
+          {isLoggedIn && (
+            <div className="bg-gray-50 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-gray-700">
+                  {myReview ? 'Your Review' : 'Write a Review'}
+                </p>
+                {myReview && (
+                  <button onClick={handleDeleteReview}
+                    className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700">
+                    <Trash2 size={13} /> Delete
+                  </button>
+                )}
+              </div>
+              <form onSubmit={handleSubmitReview} className="space-y-3">
+                <div>
+                  <StarPicker value={formRating} onChange={setFormRating} />
+                </div>
+                <input
+                  value={formTitle}
+                  onChange={e => setFormTitle(e.target.value)}
+                  placeholder="Title (optional)"
+                  className="w-full text-sm px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+                />
+                <textarea
+                  value={formComment}
+                  onChange={e => setFormComment(e.target.value)}
+                  placeholder="Share your experience..."
+                  rows={3}
+                  className="w-full text-sm px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white resize-none"
+                />
+                <button type="submit" disabled={submitting}
+                  className="flex items-center gap-2 bg-yellow-400 text-gray-900 text-sm font-bold px-4 py-2 rounded-xl hover:bg-yellow-300 disabled:opacity-50 transition-colors">
+                  <Send size={14} />
+                  {submitting ? 'Saving…' : myReview ? 'Update Review' : 'Submit Review'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Review list */}
           {reviews.length === 0 ? (
             <div className="text-center py-6 text-gray-400">
               <Star size={28} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No reviews yet</p>
-              {isLoggedIn && (
-                <p className="text-xs mt-1">Buy this product to leave a review</p>
-              )}
+              <p className="text-sm">No reviews yet. Be the first!</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {reviews.map(r => (
-                <div key={r.reviewId} className="border-b border-gray-50 pb-3 last:border-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <StarDisplay rating={r.rating} size={12} />
-                    <span className="text-xs text-gray-400">
-                      {new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
+            <>
+              <div className="space-y-3">
+                {reviews.map(r => (
+                  <div key={r.reviewId} className="border-b border-gray-50 pb-3 last:border-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <StarDisplay rating={r.rating} size={12} />
+                      <span className="text-xs text-gray-400">
+                        {new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                    {r.title && <p className="text-sm font-semibold text-gray-800">{r.title}</p>}
+                    <p className="text-sm text-gray-600">{r.comment}</p>
                   </div>
-                  {r.title && <p className="text-sm font-semibold text-gray-800">{r.title}</p>}
-                  <p className="text-sm text-gray-600">{r.comment}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              {reviewPage < reviewTotalPages - 1 && (
+                <button onClick={loadMoreReviews} disabled={loadingMoreReviews}
+                  className="w-full border border-gray-200 text-gray-500 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 disabled:opacity-50">
+                  {loadingMoreReviews ? 'Loading…' : 'Load more reviews'}
+                </button>
+              )}
+            </>
           )}
         </div>
       </main>

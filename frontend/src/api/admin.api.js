@@ -38,4 +38,7 @@ export const adminApi = {
   // Delivery task by orderId
   getDeliveryTaskByOrder: (orderId) => api.get(`/api/delivery/admin/tasks/by-order/${orderId}`),
   getDeliveryPartner: (partnerId) => api.get(`/api/delivery/admin/partners/${partnerId}`),
+  // Reviews
+  getAllReviews: (params) => api.get('/api/reviews/admin/all', { params }),
+  deleteReview: (reviewId) => api.delete(`/api/reviews/${reviewId}`),
 };
