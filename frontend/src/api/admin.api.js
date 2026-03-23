@@ -10,7 +10,12 @@ export const adminApi = {
   createCategory: (data) => api.post('/api/categories/admin', data),
   // Inventory
   getInventory: (params) => api.get('/api/inventory/admin', { params }),
-  updateStock: (productId, quantityToAdd, reason) => api.put(`/api/inventory/admin/${productId}`, { quantityToAdd, reason }),
+  updateStock: (productId, quantityToAdd, reason, lowStockThreshold) =>
+    api.put(`/api/inventory/admin/${productId}`, {
+      quantityToAdd,
+      reason,
+      ...(lowStockThreshold != null ? { lowStockThreshold } : {}),
+    }),
   // Orders
   getAllOrders: (params) => api.get('/api/orders/admin', { params }),
   getOrder: (orderId) => api.get(`/api/orders/admin/${orderId}`),

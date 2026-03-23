@@ -4,16 +4,22 @@ import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Search, X, Package } from
 import toast from 'react-hot-toast';
 import { adminApi } from '../../../api/admin.api';
 import { productApi } from '../../../api/product.api';
+import ImageUploader from '../../../components/common/ImageUploader';
 
 const EMPTY_FORM = {
-  name: '',
-  slug: '',
-  description: '',
-  categoryId: '',
-  mrp: '',
-  sellingPrice: '',
-  unit: '',
+  // Basic
+  name: '', slug: '', shortDescription: '', description: '',
+  // Category & Brand
+  categoryId: '', brandId: '',
+  // Pricing
+  mrp: '', sellingPrice: '', unit: '', weightInGrams: '',
+  // Image
   thumbnailUrl: '',
+  // Details
+  countryOfOrigin: '', expiryInfo: '', nutritionInfo: '', tags: '',
+  // Inventory (create only)
+  initialStock: '', lowStockThreshold: '10',
+  // Options
   isFeatured: false,
 };
 
@@ -21,22 +27,40 @@ function slugify(str) {
   return str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
+// Section header helper
+function Section({ title }) {
+  return (
+    <div className="col-span-2 pt-2">
+      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-1">
+        {title}
+      </p>
+    </div>
+  );
+}
+
 function ProductModal({ product, categories, onClose, onSaved }) {
   const isEdit = !!product?.productId;
   const [form, setForm] = useState(
-    isEdit
-      ? {
-          name: product.name || '',
-          slug: product.slug || '',
-          description: product.description || '',
-          categoryId: product.categoryId || '',
-          mrp: product.mrp ?? '',
-          sellingPrice: product.sellingPrice ?? '',
-          unit: product.unit || '',
-          thumbnailUrl: product.thumbnailUrl || '',
-          isFeatured: product.isFeatured || false,
-        }
-      : { ...EMPTY_FORM }
+    isEdit ? {
+      name:             product.name             || '',
+      slug:             product.slug             || '',
+      shortDescription: product.shortDescription || '',
+      description:      product.description      || '',
+      categoryId:       product.categoryId       || '',
+      brandId:          product.brandId          || '',
+      mrp:              product.mrp              ?? '',
+      sellingPrice:     product.sellingPrice     ?? '',
+      unit:             product.unit             || '',
+      weightInGrams:    product.weightInGrams    ?? '',
+      thumbnailUrl:     product.thumbnailUrl     || '',
+      countryOfOrigin:  product.countryOfOrigin  || '',
+      expiryInfo:       product.expiryInfo       || '',
+      nutritionInfo:    product.nutritionInfo    || '',
+      tags:             (product.tags || []).join(', '),
+      initialStock:     '',
+      lowStockThreshold:'10',
+      isFeatured:       product.isFeatured       || false,
+    } : { ...EMPTY_FORM }
   );
   const [saving, setSaving] = useState(false);
 
@@ -47,27 +71,67 @@ function ProductModal({ product, categories, onClose, onSaved }) {
       return next;
     });
 
+  // Live discount preview
+  const discount = form.mrp && form.sellingPrice
+    ? Math.max(0, Math.floor(((form.mrp - form.sellingPrice) / form.mrp) * 100))
+    : 0;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.categoryId || !form.mrp || !form.sellingPrice) {
-      toast.error('Please fill all required fields');
-      return;
+
+    // Validation
+    if (!form.name.trim())        { toast.error('Product name is required');    return; }
+    if (!form.categoryId)         { toast.error('Category is required');        return; }
+    if (!form.mrp || !form.sellingPrice) { toast.error('MRP and Selling Price are required'); return; }
+    if (parseFloat(form.sellingPrice) > parseFloat(form.mrp)) {
+      toast.error('Selling price cannot exceed MRP'); return;
     }
+    if (!form.unit.trim())        { toast.error('Unit is required');            return; }
+    if (!form.thumbnailUrl)       { toast.error('Product image is required');   return; }
+    if (!isEdit && !form.initialStock) { toast.error('Initial stock is required'); return; }
+
     setSaving(true);
     try {
       const payload = {
-        ...form,
-        mrp: parseFloat(form.mrp),
-        sellingPrice: parseFloat(form.sellingPrice),
-        images: form.thumbnailUrl ? [form.thumbnailUrl] : [],
+        name:             form.name.trim(),
+        slug:             form.slug.trim(),
+        shortDescription: form.shortDescription.trim() || null,
+        description:      form.description.trim()      || null,
+        categoryId:       form.categoryId,
+        brandId:          form.brandId.trim()          || null,
+        mrp:              parseFloat(form.mrp),
+        sellingPrice:     parseFloat(form.sellingPrice),
+        unit:             form.unit.trim(),
+        weightInGrams:    form.weightInGrams ? parseFloat(form.weightInGrams) : null,
+        images:           [form.thumbnailUrl],
+        countryOfOrigin:  form.countryOfOrigin.trim()  || null,
+        expiryInfo:       form.expiryInfo.trim()        || null,
+        nutritionInfo:    form.nutritionInfo.trim()     || null,
+        tags:             form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+        isFeatured:       form.isFeatured,
       };
+
+      let productId;
       if (isEdit) {
         await adminApi.updateProduct(product.productId, payload);
+        productId = product.productId;
         toast.success('Product updated');
       } else {
-        await adminApi.createProduct(payload);
+        const res = await adminApi.createProduct(payload);
+        productId = res.data?.data?.productId;
         toast.success('Product created');
       }
+
+      // Set initial stock on create, or update low-stock threshold if changed
+      if (productId) {
+        if (!isEdit && form.initialStock) {
+          await adminApi.updateStock(productId, parseInt(form.initialStock), 'Initial stock');
+        }
+        if (form.lowStockThreshold) {
+          await adminApi.updateStock(productId, 0, 'Threshold update', parseInt(form.lowStockThreshold));
+        }
+      }
+
       onSaved();
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to save product');
@@ -76,133 +140,194 @@ function ProductModal({ product, categories, onClose, onSaved }) {
     }
   };
 
+  const inp = 'w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="text-base font-bold text-gray-900">{isEdit ? 'Edit Product' : 'Add Product'}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={20} />
-          </button>
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+          <div>
+            <h3 className="text-base font-bold text-gray-900">{isEdit ? 'Edit Product' : 'Add Product'}</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Fields marked <span className="text-red-500">*</span> are mandatory</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+
+        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+
+            {/* ── Basic Info ─────────────────────────────────── */}
+            <Section title="Basic Info" />
+
             <div className="col-span-2">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Name *</label>
-              <input
-                value={form.name}
-                onChange={e => set('name', e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="Product name"
-                required
-              />
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Product Name <span className="text-red-500">*</span></label>
+              <input value={form.name} onChange={e => set('name', e.target.value)}
+                className={inp} placeholder="e.g. Aashirvaad Whole Wheat Atta" />
             </div>
+
             <div className="col-span-2">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Slug</label>
-              <input
-                value={form.slug}
-                onChange={e => set('slug', e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="auto-generated"
-              />
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Slug <span className="text-gray-400 font-normal">(auto-filled)</span>
+              </label>
+              <input value={form.slug} onChange={e => set('slug', e.target.value)}
+                className={`${inp} text-gray-400`} placeholder="aashirvaad-whole-wheat-atta" />
             </div>
+
             <div className="col-span-2">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
-              <textarea
-                value={form.description}
-                onChange={e => set('description', e.target.value)}
-                rows={2}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
-                placeholder="Short description"
-              />
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Short Description <span className="text-gray-400 font-normal">(max 100 chars)</span>
+              </label>
+              <input value={form.shortDescription} onChange={e => set('shortDescription', e.target.value)}
+                className={inp} placeholder="One-line product tagline" maxLength={100} />
             </div>
+
             <div className="col-span-2">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Category *</label>
-              <select
-                value={form.categoryId}
-                onChange={e => set('categoryId', e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
-                required
-              >
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Full Description</label>
+              <textarea value={form.description} onChange={e => set('description', e.target.value)}
+                rows={2} className={`${inp} resize-none`} placeholder="Detailed product description" />
+            </div>
+
+            {/* ── Category & Brand ───────────────────────────── */}
+            <Section title="Category & Brand" />
+
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Category <span className="text-red-500">*</span></label>
+              <select value={form.categoryId} onChange={e => set('categoryId', e.target.value)}
+                className={`${inp} bg-white`}>
                 <option value="">Select category</option>
                 {categories.map(c => (
-                  <option key={c.categoryId || c.id} value={c.categoryId || c.id}>
-                    {c.name}
-                  </option>
+                  <option key={c.categoryId || c.id} value={c.categoryId || c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">MRP (₹) *</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.mrp}
-                onChange={e => set('mrp', e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="0.00"
-                required
-              />
+
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Brand Name</label>
+              <input value={form.brandId} onChange={e => set('brandId', e.target.value)}
+                className={inp} placeholder="e.g. Amul, Nestlé" />
             </div>
+
+            {/* ── Pricing ────────────────────────────────────── */}
+            <Section title="Pricing" />
+
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Selling Price (₹) *</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.sellingPrice}
-                onChange={e => set('sellingPrice', e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="0.00"
-                required
-              />
+              <label className="block text-xs font-semibold text-gray-600 mb-1">MRP (₹) <span className="text-red-500">*</span></label>
+              <input type="number" min="0.01" step="0.01" value={form.mrp}
+                onChange={e => set('mrp', e.target.value)} className={inp} placeholder="0.00" />
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Unit</label>
-              <input
-                value={form.unit}
-                onChange={e => set('unit', e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="e.g. 500g, 1L"
-              />
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Selling Price (₹) <span className="text-red-500">*</span>
+                {discount > 0 && (
+                  <span className="ml-1 text-green-600 font-bold">{discount}% off</span>
+                )}
+              </label>
+              <input type="number" min="0.01" step="0.01" value={form.sellingPrice}
+                onChange={e => set('sellingPrice', e.target.value)} className={inp} placeholder="0.00" />
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Thumbnail URL</label>
-              <input
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Unit <span className="text-red-500">*</span></label>
+              <input value={form.unit} onChange={e => set('unit', e.target.value)}
+                className={inp} placeholder="e.g. 1kg, 500g, 1L, 6 pcs" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Weight (grams)</label>
+              <input type="number" min="0" value={form.weightInGrams}
+                onChange={e => set('weightInGrams', e.target.value)} className={inp} placeholder="e.g. 500" />
+            </div>
+
+            {/* ── Product Image ──────────────────────────────── */}
+            <Section title="Product Image" />
+
+            <div className="col-span-2">
+              <ImageUploader
+                label={<>Product Image <span className="text-red-500">*</span></>}
                 value={form.thumbnailUrl}
-                onChange={e => set('thumbnailUrl', e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="https://..."
+                onChange={url => set('thumbnailUrl', url)}
               />
             </div>
+
+            {/* ── Product Details ────────────────────────────── */}
+            <Section title="Product Details" />
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Country of Origin</label>
+              <input value={form.countryOfOrigin} onChange={e => set('countryOfOrigin', e.target.value)}
+                className={inp} placeholder="e.g. India" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Expiry / Shelf Life</label>
+              <input value={form.expiryInfo} onChange={e => set('expiryInfo', e.target.value)}
+                className={inp} placeholder="e.g. 12 months" />
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Nutrition Info</label>
+              <textarea value={form.nutritionInfo} onChange={e => set('nutritionInfo', e.target.value)}
+                rows={2} className={`${inp} resize-none`}
+                placeholder="e.g. Energy: 350kcal, Protein: 12g, Carbs: 65g" />
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Tags <span className="text-gray-400 font-normal">(comma-separated)</span>
+              </label>
+              <input value={form.tags} onChange={e => set('tags', e.target.value)}
+                className={inp} placeholder="e.g. organic, gluten-free, bestseller" />
+            </div>
+
+            {/* ── Inventory ──────────────────────────────────── */}
+            <Section title="Inventory" />
+
+            {!isEdit && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  Initial Stock (units) <span className="text-red-500">*</span>
+                </label>
+                <input type="number" min="0" value={form.initialStock}
+                  onChange={e => set('initialStock', e.target.value)}
+                  className={inp} placeholder="e.g. 100" />
+              </div>
+            )}
+
+            <div className={!isEdit ? '' : 'col-span-2'}>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Low Stock Alert Threshold
+                <span className="text-gray-400 font-normal ml-1">(default 10)</span>
+              </label>
+              <input type="number" min="0" value={form.lowStockThreshold}
+                onChange={e => set('lowStockThreshold', e.target.value)}
+                className={inp} placeholder="10" />
+            </div>
+
+            {/* ── Options ────────────────────────────────────── */}
+            <Section title="Options" />
+
             <div className="col-span-2 flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="isFeatured"
-                checked={form.isFeatured}
+              <input type="checkbox" id="isFeatured" checked={form.isFeatured}
                 onChange={e => set('isFeatured', e.target.checked)}
-                className="w-4 h-4 accent-yellow-400 rounded"
-              />
+                className="w-4 h-4 accent-yellow-400 rounded" />
               <label htmlFor="isFeatured" className="text-sm font-medium text-gray-700">
-                Featured product
+                Mark as Featured product <span className="text-xs text-gray-400">(shown on homepage)</span>
               </label>
             </div>
+
           </div>
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition-colors"
-            >
+
+          {/* Footer */}
+          <div className="flex gap-3 pt-5 mt-2 border-t border-gray-100">
+            <button type="button" onClick={onClose}
+              className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition-colors">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 bg-yellow-400 text-gray-900 font-bold py-2.5 rounded-xl text-sm hover:bg-yellow-500 transition-colors disabled:opacity-60"
-            >
-              {saving ? 'Saving...' : isEdit ? 'Update' : 'Create'}
+            <button type="submit" disabled={saving}
+              className="flex-1 bg-yellow-400 text-gray-900 font-bold py-2.5 rounded-xl text-sm hover:bg-yellow-500 transition-colors disabled:opacity-60">
+              {saving ? 'Saving…' : isEdit ? 'Update Product' : 'Create Product'}
             </button>
           </div>
         </form>

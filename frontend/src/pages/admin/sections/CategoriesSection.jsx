@@ -3,6 +3,7 @@ import { Plus, Tag, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../../api/admin.api';
 import { productApi } from '../../../api/product.api';
+import ImageUploader from '../../../components/common/ImageUploader';
 
 const EMPTY_FORM = {
   name: '',
@@ -87,15 +88,11 @@ function CategoryModal({ onClose, onSaved }) {
               placeholder="Short description"
             />
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Image URL</label>
-            <input
-              value={form.imageUrl}
-              onChange={e => set('imageUrl', e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              placeholder="https://..."
-            />
-          </div>
+          <ImageUploader
+            label="Category Image"
+            value={form.imageUrl}
+            onChange={url => set('imageUrl', url)}
+          />
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Display Order</label>
             <input
