@@ -4,6 +4,7 @@ import com.blinkit.common.dto.ApiResponse;
 import com.blinkit.common.enums.ApiResponseCode;
 import com.blinkit.coupon.dto.request.RecordUsageRequest;
 import com.blinkit.coupon.dto.request.ValidateCouponRequest;
+import com.blinkit.coupon.dto.response.ApplicableCouponsResponse;
 import com.blinkit.coupon.dto.response.CouponResponse;
 import com.blinkit.coupon.dto.response.ValidateCouponResponse;
 import com.blinkit.coupon.service.CouponService;
@@ -27,6 +28,15 @@ public class CouponController {
         return ResponseEntity.ok(
                 ApiResponse.ok(ApiResponseCode.ACTIVE_COUPONS_FETCHED.getMessage(),
                         couponService.getActiveCoupons()));
+    }
+
+    // Authenticated — best applicable coupons for a given cart total
+    @GetMapping("/applicable")
+    public ResponseEntity<ApiResponse<ApplicableCouponsResponse>> getApplicableCoupons(
+            @RequestParam double cartTotal) {
+        return ResponseEntity.ok(
+                ApiResponse.ok("Applicable coupons fetched",
+                        couponService.getApplicableCoupons(cartTotal)));
     }
 
     // Internal — validate coupon (called by cart-service via Feign, blocked at gateway)

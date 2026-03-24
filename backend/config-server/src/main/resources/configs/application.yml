@@ -50,4 +50,4 @@ logging:
     com.blinkit: DEBUG
 
 internal:
-  secret-key: ${INTERNAL_SECRET:blinkit-internal-svc-secret-2026!!}
+  secret-key: ${INTERNAL_SECRET}

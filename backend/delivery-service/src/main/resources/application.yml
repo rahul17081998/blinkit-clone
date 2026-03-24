@@ -10,10 +10,5 @@ spring:
       - optional:file:../.env[.properties]
       - configserver:http://${CONFIG_SERVER_HOST:localhost}:${CONFIG_SERVER_PORT:8888}
 
-delivery:
-  store:
-    name: "Blinkit Dark Store - Bangalore"
-    address: "Koramangala, Bangalore, Karnataka 560034"
-    lat: 12.9352
-    lng: 77.6245
-  cooldown-minutes: 5   # partner rest period after completing a delivery
+# delivery.* config is loaded from config-server (delivery-service.yml)
+# with values sourced from env vars (DELIVERY_STORE_NAME, DELIVERY_STORE_LAT, etc.)

@@ -8,6 +8,11 @@ spring:
     name: config-server
   profiles:
     active: native            # 'native' = read config files from classpath/filesystem
+    group:
+      dev:
+        - native              # dev profile always activates native too
+      prod:
+        - native              # prod profile always activates native too
   cloud:
     config:
       enabled: false   # config-server is the server, not a client

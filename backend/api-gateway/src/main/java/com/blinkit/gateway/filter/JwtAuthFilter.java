@@ -8,9 +8,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -95,6 +97,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         try {
             claims = extractClaims(token);
         } catch (Exception e) {
+            log.warn("JWT validation failed. Secret prefix: '{}'. Error: {}", secretKey.substring(0, Math.min(10, secretKey.length())), e.getMessage());
             return unauthorised(exchange, "Invalid or expired token: " + e.getMessage());
         }
 
@@ -137,9 +140,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     }
 
     private Mono<Void> unauthorised(ServerWebExchange exchange, String reason) {
-        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-        exchange.getResponse().getHeaders().add("X-Auth-Error", reason);
-        return exchange.getResponse().setComplete();
+        var response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        String body = "{\"success\":false,\"message\":\"" + reason.replace("\"", "'") + "\",\"data\":null}";
+        DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return response.writeWith(Mono.just(buffer));
     }
 
     @Override

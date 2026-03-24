@@ -38,7 +38,7 @@ spring:
         - id: product-service
           uri: lb://product-service
           predicates:
-            - Path=/api/products/**, /api/categories/**
+            - Path=/api/products/**, /api/categories/**, /api/images/**
           filters:
             - StripPrefix=1
 
@@ -104,6 +104,9 @@ spring:
             allowedOrigins:
               - "http://localhost:3000"
               - "http://localhost:3001"
+              - "http://localhost:5173"
+              - "http://localhost:5174"
+              - "${FRONTEND_URL:http://localhost:5173}"
             allowedMethods:
               - GET
               - POST

@@ -4,3 +4,18 @@ spring:
       uri: ${MONGO_URI}
       database: delivery_db
       auto-index-creation: true
+
+delivery:
+  store:
+    name: ${DELIVERY_STORE_NAME:Blinkit Warehouse}
+    address: ${DELIVERY_STORE_ADDRESS:Bangalore, India}
+    lat: ${DELIVERY_STORE_LAT:12.9352}
+    lng: ${DELIVERY_STORE_LNG:77.6245}
+  cooldown-minutes: ${DELIVERY_COOLDOWN_MINUTES:5}
+  estimated-delivery-minutes: ${DELIVERY_ETA_MINUTES:30}
+
+scheduling:
+  retry-unassigned-delay-ms: ${SCHEDULING_RETRY_UNASSIGNED_MS:30000}
+  release-cooldown-delay-ms: ${SCHEDULING_RELEASE_COOLDOWN_MS:60000}
+  auto-complete-stale-delay-ms: ${SCHEDULING_AUTO_COMPLETE_MS:300000}
+  simulate-progress-delay-ms: ${SCHEDULING_SIMULATE_PROGRESS_MS:30000}

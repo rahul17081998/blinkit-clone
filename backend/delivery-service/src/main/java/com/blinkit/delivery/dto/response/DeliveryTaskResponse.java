@@ -15,6 +15,10 @@ public class DeliveryTaskResponse {
     private String userId;
     private String addressId;
     private String deliveryPartnerId;
+    private String partnerName;
+    private String partnerPhone;
+    private String vehicleType;
+    private String vehicleNumber;
     private String status;
     private String storeName;
     private String storeAddress;

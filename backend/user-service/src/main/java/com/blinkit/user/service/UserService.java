@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -22,12 +23,27 @@ public class UserService {
 
     private final UserProfileRepository profileRepo;
     private final AddressRepository addressRepo;
+    private final CloudinaryService cloudinaryService;
 
     // ── Profile ───────────────────────────────────────────────────
 
     public UserProfile getProfile(String userId) {
         return profileRepo.findByUserId(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+    }
+
+    public UserProfile updateProfilePhoto(String userId, MultipartFile file) {
+        UserProfile profile = profileRepo.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+
+        // Delete old photo from Cloudinary before uploading new one
+        if (profile.getProfileImageUrl() != null) {
+            cloudinaryService.deletePhoto(profile.getProfileImageUrl());
+        }
+
+        String url = cloudinaryService.uploadProfilePhoto(file);
+        profile.setProfileImageUrl(url);
+        return profileRepo.save(profile);
     }
 
     public UserProfile updateProfile(String userId, String email, UpdateProfileRequest req) {
@@ -49,6 +65,11 @@ public class UserService {
 
     public List<Address> getAddresses(String userId) {
         return addressRepo.findByUserId(userId);
+    }
+
+    public Address getAddressById(String addressId) {
+        return addressRepo.findByAddressId(addressId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Address not found"));
     }
 
     public Address addAddress(String userId, AddressRequest req) {

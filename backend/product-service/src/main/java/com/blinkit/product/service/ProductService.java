@@ -30,6 +30,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductEventPublisher eventPublisher;
+    private final CloudinaryService cloudinaryService;
 
     public ProductResponse createProduct(CreateProductRequest req, String adminUserId) {
         if (productRepository.existsBySlug(req.getSlug())) {
@@ -102,6 +103,10 @@ public class ProductService {
         if (req.getDescription() != null) product.setDescription(req.getDescription());
         if (req.getShortDescription() != null) product.setShortDescription(req.getShortDescription());
         if (req.getImages() != null && !req.getImages().isEmpty()) {
+            // Delete old images from Cloudinary before replacing
+            if (product.getImages() != null) {
+                product.getImages().forEach(cloudinaryService::deleteImage);
+            }
             product.setImages(req.getImages());
             product.setThumbnailUrl(req.getImages().get(0));
         }
@@ -137,6 +142,12 @@ public class ProductService {
     public void deleteProduct(String productId) {
         Product product = productRepository.findByProductId(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+
+        // Delete all product images from Cloudinary CDN
+        if (product.getImages() != null) {
+            product.getImages().forEach(cloudinaryService::deleteImage);
+        }
+
         productRepository.delete(product);
         log.info("Deleted product: {}", productId);
     }
@@ -153,17 +164,20 @@ public class ProductService {
     public Page<ProductResponse> listProducts(int page, int size, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return productRepository.findByIsAvailableTrue(pageable).map(ProductResponse::from);
+        // Return all products — unavailable ones are shown faded on the customer UI
+        return productRepository.findAll(pageable).map(ProductResponse::from);
     }
 
     public Page<ProductResponse> listByCategory(String slug, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("sellingPrice").ascending());
-        return productRepository.findByCategorySlugAndIsAvailableTrue(slug, pageable).map(ProductResponse::from);
+        // Return all products in category — unavailable shown faded
+        return productRepository.findByCategorySlug(slug, pageable).map(ProductResponse::from);
     }
 
     public Page<ProductResponse> searchProducts(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return productRepository.searchByText(query, pageable).map(ProductResponse::from);
+        // Regex search enables partial/prefix matching (e.g. "oni" matches "onion")
+        return productRepository.searchByNameRegex(query, pageable).map(ProductResponse::from);
     }
 
     public ProductResponse getProduct(String productId) {

@@ -2,6 +2,8 @@
 .env
 *.env
 .env.*
+!.env.example
+!**/.env.example
 
 # Maven
 target/
@@ -30,6 +32,7 @@ mongodb-data/
 
 # Local-only work notes (not for repo)
 WORK_PROGRESS.md
+TEST_CREDENTIALS.md
 CLAUDE.md
 *.pids
 .pids

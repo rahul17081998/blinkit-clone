@@ -1,0 +1,22 @@
+# ─────────────────────────────────────────────────────────────────
+# DEV profile overrides — active when SPRING_PROFILES_ACTIVE=dev
+# Merged on top of application.yml by Config Server
+# ─────────────────────────────────────────────────────────────────
+
+logging:
+  level:
+    com.blinkit: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.kafka: WARN
+    org.springframework.data.mongodb: DEBUG
+
+eureka:
+  instance:
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 15
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,loggers

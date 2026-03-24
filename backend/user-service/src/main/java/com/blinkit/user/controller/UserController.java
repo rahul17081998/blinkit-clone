@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -34,6 +35,14 @@ public class UserController {
                 .body(ApiResponse.ok(ApiResponseCode.PROFILE_FETCHED.getMessage(), userService.getProfile(userId)));
     }
 
+    @Operation(summary = "Upload profile photo")
+    @PostMapping("/profile/photo")
+    public ResponseEntity<ApiResponse<UserProfile>> uploadProfilePhoto(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(ApiResponse.ok("Profile photo updated", userService.updateProfilePhoto(userId, file)));
+    }
+
     @Operation(summary = "Update my profile")
     @PutMapping("/profile")
     public ResponseEntity<ApiResponse<UserProfile>> updateProfile(
@@ -42,6 +51,38 @@ public class UserController {
             @Valid @RequestBody UpdateProfileRequest req) {
         return ResponseEntity.status(ApiResponseCode.PROFILE_UPDATED.getHttpStatus())
                 .body(ApiResponse.ok(ApiResponseCode.PROFILE_UPDATED.getMessage(), userService.updateProfile(userId, email, req)));
+    }
+
+    // ── Admin lookups ──────────────────────────────────────────────
+
+    @GetMapping("/admin/{userId}")
+    public ResponseEntity<ApiResponse<UserProfile>> getUserById(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable String userId) {
+        if (!"ADMIN".equalsIgnoreCase(role))
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Admin access required");
+        return ResponseEntity.ok(ApiResponse.ok("Profile fetched", userService.getProfile(userId)));
+    }
+
+    @GetMapping("/admin/address/{addressId}")
+    public ResponseEntity<ApiResponse<Address>> getAddressById(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable String addressId) {
+        if (!"ADMIN".equalsIgnoreCase(role))
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Admin access required");
+        return ResponseEntity.ok(ApiResponse.ok("Address fetched", userService.getAddressById(addressId)));
+    }
+
+    @GetMapping("/delivery/address/{addressId}")
+    public ResponseEntity<ApiResponse<Address>> getAddressByIdForAgent(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable String addressId) {
+        if (!"DELIVERY_AGENT".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role))
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Access denied");
+        return ResponseEntity.ok(ApiResponse.ok("Address fetched", userService.getAddressById(addressId)));
     }
 
     // ── Addresses ─────────────────────────────────────────────────

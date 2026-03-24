@@ -34,6 +34,16 @@ public class AdminOrderController {
                 orderService.getAllOrders(pageable)));
     }
 
+    @GetMapping("/{orderId}")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrder(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable String orderId) {
+        requireAdmin(role);
+        return ResponseEntity.ok(ApiResponse.ok(
+                ApiResponseCode.ORDER_FETCHED.getMessage(),
+                orderService.getOrderAdmin(orderId)));
+    }
+
     @PutMapping("/{orderId}/status")
     public ResponseEntity<ApiResponse<OrderResponse>> updateStatus(
             @RequestHeader("X-User-Role") String role,

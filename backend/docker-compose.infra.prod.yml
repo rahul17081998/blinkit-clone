@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────────────────────────
+# docker-compose.infra.prod.yml — Production port overrides
+#
+# Overrides docker-compose.infra.yml to bind ALL infrastructure
+# ports to 127.0.0.1 (localhost only). Nothing is exposed to the
+# internet — all infra is reachable only from the same Oracle VM.
+#
+# Access UI tools via SSH tunnel:
+#   ssh -L 9093:localhost:9093 user@<oracle-vm-ip>   → Kafka UI
+#   ssh -L 9191:localhost:9191 user@<oracle-vm-ip>   → Redis UI
+#
+# Usage (on Oracle VM):
+#   docker compose -f docker-compose.infra.yml \
+#                  -f docker-compose.infra.prod.yml up -d
+# ─────────────────────────────────────────────────────────────────
+
+services:
+
+  zookeeper:
+    ports:
+      - "127.0.0.1:2181:2181"
+
+  kafka:
+    ports:
+      - "127.0.0.1:9092:9092"
+
+  kafka-ui:
+    ports:
+      - "127.0.0.1:9093:8080"
+
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  redis-commander:
+    ports:
+      - "127.0.0.1:9191:8081"

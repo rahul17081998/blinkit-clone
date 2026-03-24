@@ -1,0 +1,32 @@
+# ─────────────────────────────────────────────────────────────────
+# PROD profile overrides — active when SPRING_PROFILES_ACTIVE=prod
+# Merged on top of application.yml by Config Server
+# ─────────────────────────────────────────────────────────────────
+
+logging:
+  level:
+    com.blinkit: INFO
+    org.springframework: WARN
+    org.apache.kafka: WARN
+
+eureka:
+  instance:
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info   # restrict actuator exposure in prod
+  endpoint:
+    health:
+      show-details: when-authorized  # hide internals from anonymous callers
+
+# ── Upstash Redis — TLS required ─────────────────────────────────
+spring:
+  data:
+    redis:
+      ssl:
+        enabled: true
+

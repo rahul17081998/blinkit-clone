@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -151,5 +152,31 @@ public class DeliveryPartnerService {
     /** Persist partner changes (called by task service after delivery/cooldown updates). */
     public void savePartner(DeliveryPartner partner) {
         partnerRepository.save(partner);
+    }
+
+    /**
+     * Find any active partner for simulation, or create a synthetic "Blinkit Rider"
+     * if no partner exists. Used by the delivery simulation scheduler.
+     */
+    public DeliveryPartner findOrCreateSimulationPartner() {
+        return partnerRepository.findAll().stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsActive()))
+                .findFirst()
+                .orElseGet(() -> {
+                    DeliveryPartner sim = DeliveryPartner.builder()
+                            .partnerId(UUID.randomUUID().toString())
+                            .name("Blinkit Rider")
+                            .phone("+91-9999999999")
+                            .vehicleType("MOTORCYCLE")
+                            .vehicleNumber("DL01AB1234")
+                            .isAvailable(false)
+                            .isActive(true)
+                            .avgRating(4.8)
+                            .totalDeliveries(0)
+                            .build();
+                    DeliveryPartner saved = partnerRepository.save(sim);
+                    log.info("Simulation: created synthetic delivery partner {}", saved.getPartnerId());
+                    return saved;
+                });
     }
 }

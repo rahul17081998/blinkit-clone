@@ -118,6 +118,7 @@ public class CartService {
     public void clearCart(String userId) {
         redisTemplate.delete(cartKey(userId));
         redisTemplate.delete(promoKey(userId));
+        redisTemplate.delete(deliveryPromoKey(userId));
         log.info("Cart cleared for userId={}", userId);
     }
 
@@ -145,7 +146,6 @@ public class CartService {
     public CartResponse applyPromo(String userId, ApplyPromoRequest req) {
         String code = req.getCode().toUpperCase().trim();
 
-        // Calculate current cart total to pass for validation
         CartResponse current = buildCartResponse(userId);
         if (current.getItems().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cart is empty");
@@ -163,16 +163,31 @@ public class CartService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, validation.getMessage());
         }
 
-        redisTemplate.opsForValue().set(promoKey(userId), code, CART_TTL);
-        log.info("Promo code {} applied for userId={}", code, userId);
+        // Route to separate Redis keys — FREE_DELIVERY stacks with discount coupons
+        if (validation.isFreeDelivery()) {
+            redisTemplate.opsForValue().set(deliveryPromoKey(userId), code, CART_TTL);
+            log.info("Delivery promo code {} applied for userId={}", code, userId);
+        } else {
+            redisTemplate.opsForValue().set(promoKey(userId), code, CART_TTL);
+            log.info("Discount promo code {} applied for userId={}", code, userId);
+        }
+
         return buildCartResponse(userId);
     }
 
-    // ── Remove promo code ─────────────────────────────────────────────
+    // ── Remove discount promo code ────────────────────────────────────
 
     public CartResponse removePromo(String userId) {
         redisTemplate.delete(promoKey(userId));
-        log.info("Promo code removed for userId={}", userId);
+        log.info("Discount promo removed for userId={}", userId);
+        return buildCartResponse(userId);
+    }
+
+    // ── Remove delivery promo code ────────────────────────────────────
+
+    public CartResponse removeDeliveryPromo(String userId) {
+        redisTemplate.delete(deliveryPromoKey(userId));
+        log.info("Delivery promo removed for userId={}", userId);
         return buildCartResponse(userId);
     }
 
@@ -217,35 +232,49 @@ public class CartService {
 
         items.sort(Comparator.comparing(CartItemResponse::getProductId));
 
-        // Delivery fee
+        // Delivery fee (base — may be waived by coupon below)
         double deliveryFee = itemsTotal >= FREE_DELIVERY_THRESHOLD ? 0.0 : DELIVERY_FEE;
 
-        // Promo code
+        // ── Discount coupon (FLAT / PERCENT) ──────────────────────────
         String promoCode = redisTemplate.opsForValue().get(promoKey(userId));
         double couponDiscount = 0.0;
-        boolean isFreeDelivery = false;
 
         if (promoCode != null && !items.isEmpty()) {
             try {
-                ValidateCouponResponse couponResp = couponClient.validate(
+                ValidateCouponResponse resp = couponClient.validate(
                         ValidateCouponRequest.builder()
-                                .code(promoCode)
-                                .userId(userId)
-                                .cartTotal(itemsTotal)
-                                .build()
-                );
-                if (couponResp.isValid()) {
-                    couponDiscount = couponResp.getDiscountAmount();
-                    isFreeDelivery = couponResp.isFreeDelivery();
-                    if (isFreeDelivery) deliveryFee = 0.0;
+                                .code(promoCode).userId(userId).cartTotal(itemsTotal).build());
+                if (resp.isValid()) {
+                    couponDiscount = resp.getDiscountAmount();
                 } else {
-                    // Coupon no longer valid — silently remove it
                     redisTemplate.delete(promoKey(userId));
                     promoCode = null;
                 }
             } catch (Exception e) {
-                log.warn("Could not validate promo {} for userId={}: {}", promoCode, userId, e.getMessage());
+                log.warn("Could not validate discount promo {} for userId={}: {}", promoCode, userId, e.getMessage());
                 promoCode = null;
+            }
+        }
+
+        // ── Delivery coupon (FREE_DELIVERY) ───────────────────────────
+        String deliveryCode = redisTemplate.opsForValue().get(deliveryPromoKey(userId));
+        boolean isFreeDelivery = false;
+
+        if (deliveryCode != null && !items.isEmpty()) {
+            try {
+                ValidateCouponResponse resp = couponClient.validate(
+                        ValidateCouponRequest.builder()
+                                .code(deliveryCode).userId(userId).cartTotal(itemsTotal).build());
+                if (resp.isValid() && resp.isFreeDelivery()) {
+                    isFreeDelivery = true;
+                    deliveryFee = 0.0;
+                } else {
+                    redisTemplate.delete(deliveryPromoKey(userId));
+                    deliveryCode = null;
+                }
+            } catch (Exception e) {
+                log.warn("Could not validate delivery promo {} for userId={}: {}", deliveryCode, userId, e.getMessage());
+                deliveryCode = null;
             }
         }
 
@@ -257,6 +286,7 @@ public class CartService {
                 .deliveryFee(round(deliveryFee))
                 .couponCode(promoCode)
                 .couponDiscount(round(couponDiscount))
+                .deliveryCouponCode(deliveryCode)
                 .isFreeDelivery(isFreeDelivery)
                 .totalAmount(round(totalAmount))
                 .totalItems(totalItems)
@@ -306,9 +336,9 @@ public class CartService {
     private void refreshTtl(String cartKey, String userId) {
         redisTemplate.expire(cartKey, CART_TTL);
         String promoKey = promoKey(userId);
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(promoKey))) {
-            redisTemplate.expire(promoKey, CART_TTL);
-        }
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(promoKey))) redisTemplate.expire(promoKey, CART_TTL);
+        String deliveryKey = deliveryPromoKey(userId);
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(deliveryKey))) redisTemplate.expire(deliveryKey, CART_TTL);
     }
 
     private CartItemData deserializeItem(String json) {
@@ -325,6 +355,10 @@ public class CartService {
 
     private String promoKey(String userId) {
         return "cart:" + userId + ":promo";
+    }
+
+    private String deliveryPromoKey(String userId) {
+        return "cart:" + userId + ":delivery-promo";
     }
 
     private double round(double value) {

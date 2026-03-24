@@ -30,4 +30,7 @@ public interface DeliveryTaskRepository extends MongoRepository<DeliveryTask, St
      */
     @Query("{ 'status': { $in: ['ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY'] }, 'estimatedDeliveryAt': { $lt: ?0 } }")
     List<DeliveryTask> findStaleInProgressTasks(Instant now);
+
+    /** Tasks in a specific status whose updatedAt is before the given threshold — used by simulation scheduler. */
+    List<DeliveryTask> findByStatusAndUpdatedAtBefore(String status, Instant before);
 }

@@ -1,55 +1,76 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────
-# start-infra.sh — Ensure Colima + Docker infra containers are up
+# start-infra.sh — Ensure Docker infra containers are up
 # Called automatically by start-backend.sh before starting services
+# macOS: uses Colima as Docker runtime
+# Linux: Docker daemon is assumed to be running (systemd service)
 # ─────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# ── Step 1: Start Colima if not running ──────────────────────────
+# ── Step 1: Ensure Docker is reachable ───────────────────────────
 echo ""
-echo "[INFRA] Checking Colima (Docker runtime)..."
+echo "[INFRA] Checking Docker runtime..."
 if ! docker info >/dev/null 2>&1; then
-  echo "[INFRA] Docker is not reachable — starting Colima..."
-  colima start
-  # Wait up to 40s for Docker socket to be ready after colima start
-  echo -n "[INFRA] Waiting for Docker socket to be ready "
-  for i in $(seq 1 20); do
-    if docker info >/dev/null 2>&1; then
-      echo " ✅ Docker is ready!"
-      break
+  OS="$(uname -s)"
+  if [ "$OS" = "Darwin" ] && command -v colima >/dev/null 2>&1; then
+    echo "[INFRA] Docker not reachable on macOS — starting Colima..."
+    colima start
+    echo -n "[INFRA] Waiting for Docker socket "
+    for i in $(seq 1 20); do
+      if docker info >/dev/null 2>&1; then
+        echo " ✅ Docker is ready!"
+        break
+      fi
+      echo -n "."
+      sleep 2
+      if [ "$i" -eq 20 ]; then
+        echo ""
+        echo "[INFRA] ERROR: Docker did not become ready after 40s. Run: colima start"
+        exit 1
+      fi
+    done
+    echo "[INFRA] Colima started successfully."
+  else
+    echo "[INFRA] ERROR: Docker is not reachable."
+    if [ "$OS" = "Linux" ]; then
+      echo "        On Oracle VM, ensure Docker is running: sudo systemctl start docker"
+      echo "        Or add your user to docker group: sudo usermod -aG docker \$USER"
+    else
+      echo "        On macOS: run 'colima start' or start Docker Desktop"
     fi
-    echo -n "."
-    sleep 2
-    if [ "$i" -eq 20 ]; then
-      echo ""
-      echo "[INFRA] ERROR: Docker did not become ready after 40s. Run manually: colima start"
-      exit 1
-    fi
-  done
-  echo "[INFRA] Colima started successfully."
+    exit 1
+  fi
 else
-  echo "[INFRA] Colima is already running."
+  echo "[INFRA] Docker is running."
 fi
 
 # ── Step 2: Check which containers need to be started ────────────
 echo ""
 echo "[INFRA] Checking Docker infra containers..."
 
+# Build compose command — add prod override if running in prod profile
+COMPOSE_PROFILE="${PROFILE:-dev}"
+COMPOSE_CMD="docker compose -f $SCRIPT_DIR/docker-compose.infra.yml"
+if [ "$COMPOSE_PROFILE" = "prod" ] && [ -f "$SCRIPT_DIR/docker-compose.infra.prod.yml" ]; then
+  COMPOSE_CMD="$COMPOSE_CMD -f $SCRIPT_DIR/docker-compose.infra.prod.yml"
+  echo "[INFRA] Using prod port overrides (all ports bound to 127.0.0.1)"
+fi
+
 REDIS_RUNNING=$(docker ps --filter "name=blinkit-redis" --filter "status=running" --format "{{.Names}}" 2>/dev/null | grep -x "blinkit-redis" || true)
 KAFKA_RUNNING=$(docker ps --filter "name=blinkit-kafka" --filter "status=running" --format "{{.Names}}" 2>/dev/null | grep -x "blinkit-kafka" || true)
 
 if [ -z "$REDIS_RUNNING" ] || [ -z "$KAFKA_RUNNING" ]; then
   echo "[INFRA] One or more infra containers are not running — starting docker compose..."
-  docker compose -f "$SCRIPT_DIR/docker-compose.infra.yml" up -d
+  $COMPOSE_CMD up -d
 
   # Check if Kafka container actually started (NodeExistsException causes exit code 1)
   sleep 3
   KAFKA_EXITED=$(docker ps -a --filter "name=blinkit-kafka" --filter "status=exited" --format "{{.Names}}" 2>/dev/null | grep -x "blinkit-kafka" || true)
   if [ -n "$KAFKA_EXITED" ]; then
     echo "[INFRA] Kafka failed to start (likely stale Zookeeper data). Doing clean restart..."
-    docker compose -f "$SCRIPT_DIR/docker-compose.infra.yml" down -v
-    docker compose -f "$SCRIPT_DIR/docker-compose.infra.yml" up -d
+    $COMPOSE_CMD down -v
+    $COMPOSE_CMD up -d
     echo "[INFRA] Clean restart done."
   else
     echo "[INFRA] Docker compose started."
