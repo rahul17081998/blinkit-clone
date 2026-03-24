@@ -4,6 +4,7 @@ import com.blinkit.delivery.entity.DeliveryPartner;
 import com.blinkit.delivery.entity.DeliveryTask;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -28,9 +29,21 @@ public class ScheduledDeliveryJobService {
     private final DeliveryTaskService    taskService;
     private final DeliveryPartnerService partnerService;
 
+    @Value("${scheduling.retry-unassigned-delay-ms:30000}")
+    private long retryUnassignedDelayMs;
+
+    @Value("${scheduling.release-cooldown-delay-ms:60000}")
+    private long releaseCooldownDelayMs;
+
+    @Value("${scheduling.auto-complete-stale-delay-ms:300000}")
+    private long autoCompleteStaleDelayMs;
+
+    @Value("${scheduling.simulate-progress-delay-ms:30000}")
+    private long simulateProgressDelayMs;
+
     // ── 1. Retry assignment for UNASSIGNED tasks ──────────────────
 
-    @Scheduled(fixedDelay = 30_000)   // every 30 seconds
+    @Scheduled(fixedDelayString = "${scheduling.retry-unassigned-delay-ms:30000}")
     public void retryUnassignedTasks() {
         List<DeliveryTask> unassigned = taskService.getUnassignedTasks();
         if (unassigned.isEmpty()) return;
@@ -43,7 +56,7 @@ public class ScheduledDeliveryJobService {
 
     // ── 2. Release partners whose cooldown has expired ────────────
 
-    @Scheduled(fixedDelay = 60_000)   // every 60 seconds
+    @Scheduled(fixedDelayString = "${scheduling.release-cooldown-delay-ms:60000}")
     public void releaseCooldownPartners() {
         List<DeliveryPartner> expired = partnerService.findPartnersWithExpiredCooldown();
         if (expired.isEmpty()) return;
@@ -59,7 +72,7 @@ public class ScheduledDeliveryJobService {
 
     // ── 3. Auto-complete tasks that are past their delivery ETA ───
 
-    @Scheduled(fixedDelay = 300_000)  // every 5 minutes
+    @Scheduled(fixedDelayString = "${scheduling.auto-complete-stale-delay-ms:300000}")
     public void autoCompleteStale() {
         List<DeliveryTask> stale = taskService.getStaleInProgressTasks();
         if (stale.isEmpty()) return;
@@ -72,7 +85,7 @@ public class ScheduledDeliveryJobService {
 
     // ── 4. Simulation: advance delivery task statuses automatically ──
 
-    @Scheduled(fixedDelay = 30_000)   // every 30 seconds
+    @Scheduled(fixedDelayString = "${scheduling.simulate-progress-delay-ms:30000}")
     public void simulateDeliveryProgress() {
         Instant now = Instant.now();
 

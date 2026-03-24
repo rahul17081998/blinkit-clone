@@ -47,6 +47,9 @@ public class DeliveryTaskService {
     @Value("${delivery.cooldown-minutes:5}")
     private int cooldownMinutes;
 
+    @Value("${delivery.estimated-delivery-minutes:30}")
+    private int estimatedDeliveryMinutes;
+
     // ── Called from Kafka consumer ────────────────────────────────
 
     public void createTask(String orderId, String userId, String addressId) {
@@ -65,7 +68,7 @@ public class DeliveryTaskService {
                 .storeAddress(storeAddress)
                 .storeLat(storeLat)
                 .storeLng(storeLng)
-                .estimatedDeliveryAt(Instant.now().plusSeconds(30 * 60))
+                .estimatedDeliveryAt(Instant.now().plusSeconds(estimatedDeliveryMinutes * 60L))
                 .build();
         taskRepository.save(task);
         log.info("DeliveryTask created for orderId={}", orderId);

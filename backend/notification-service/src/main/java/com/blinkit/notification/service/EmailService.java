@@ -17,7 +17,7 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    @Value("${app.password-reset-base-url:http://localhost:3000/reset-password}")
+    @Value("${app.password-reset-base-url}")
     private String passwordResetBaseUrl;
 
     public void sendOtpEmail(String toEmail, String firstName, String otp) {

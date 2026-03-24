@@ -93,61 +93,72 @@ wait_for_port() {
   exit 1
 }
 
-# ── Step 1: Start Eureka (others depend on it) ───────────────────
+# ── Helper: wait for ALL ports in a wave, report failures ────────
+wait_for_wave() {
+  local failed=0
+  # args: "name:port name:port ..."
+  for entry in "$@"; do
+    local name="${entry%%:*}"
+    local port="${entry##*:}"
+    wait_for_port "$name" "$port" || failed=1
+  done
+  if [ $failed -ne 0 ]; then
+    echo "[ERROR] One or more services in this wave failed to start."
+    exit 1
+  fi
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# WAVE 1 — Eureka  (everything registers here)
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo "── Wave 1: Eureka Server ──────────────────────────────────────"
 start_service "eureka-server" "$JAR_DIR/eureka-server/target/eureka-server-1.0.0-SNAPSHOT.jar"
 wait_for_port "eureka-server" 8761
 
-# ── Step 2: Start Config Server ──────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# WAVE 2 — Config Server  (all services pull config from here)
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo "── Wave 2: Config Server ──────────────────────────────────────"
 start_service "config-server" "$JAR_DIR/config-server/target/config-server-1.0.0-SNAPSHOT.jar"
 wait_for_port "config-server" 8888
 
-# ── Step 3: Start Auth Service ────────────────────────────────────
-start_service "auth-service" "$JAR_DIR/auth-service/target/auth-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "auth-service" 8081
-
-# ── Step 4: Start User Service ────────────────────────────────────
-start_service "user-service" "$JAR_DIR/user-service/target/user-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "user-service" 8082
-
-# ── Step 5: Start Notification Service ───────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# WAVE 3 — All business services in parallel
+#   (each only needs Eureka + Config Server at startup,
+#    no service calls any other service during boot)
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo "── Wave 3: All business services (parallel) ───────────────────"
+start_service "auth-service"         "$JAR_DIR/auth-service/target/auth-service-1.0.0-SNAPSHOT.jar"
+start_service "user-service"         "$JAR_DIR/user-service/target/user-service-1.0.0-SNAPSHOT.jar"
 start_service "notification-service" "$JAR_DIR/notification-service/target/notification-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "notification-service" 8089
+start_service "api-gateway"          "$JAR_DIR/api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar"
+start_service "product-service"      "$JAR_DIR/product-service/target/product-service-1.0.0-SNAPSHOT.jar"
+start_service "inventory-service"    "$JAR_DIR/inventory-service/target/inventory-service-1.0.0-SNAPSHOT.jar"
+start_service "coupon-service"       "$JAR_DIR/coupon-service/target/coupon-service-1.0.0-SNAPSHOT.jar"
+start_service "cart-service"         "$JAR_DIR/cart-service/target/cart-service-1.0.0-SNAPSHOT.jar"
+start_service "payment-service"      "$JAR_DIR/payment-service/target/payment-service-1.0.0-SNAPSHOT.jar"
+start_service "order-service"        "$JAR_DIR/order-service/target/order-service-1.0.0-SNAPSHOT.jar"
+start_service "delivery-service"     "$JAR_DIR/delivery-service/target/delivery-service-1.0.0-SNAPSHOT.jar"
+start_service "review-service"       "$JAR_DIR/review-service/target/review-service-1.0.0-SNAPSHOT.jar"
 
-# ── Step 6: Start API Gateway (after core services are registered) ─
-start_service "api-gateway" "$JAR_DIR/api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar"
-wait_for_port "api-gateway" 8080
-
-# ── Step 7: Start Product Service ────────────────────────────────
-start_service "product-service" "$JAR_DIR/product-service/target/product-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "product-service" 8083
-
-# ── Step 8: Start Inventory Service ──────────────────────────────
-start_service "inventory-service" "$JAR_DIR/inventory-service/target/inventory-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "inventory-service" 8084
-
-# ── Step 9: Start Coupon Service ──────────────────────────────────
-start_service "coupon-service" "$JAR_DIR/coupon-service/target/coupon-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "coupon-service" 8090
-
-# ── Step 10: Start Cart Service ───────────────────────────────────
-start_service "cart-service" "$JAR_DIR/cart-service/target/cart-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "cart-service" 8087
-
-# ── Step 11: Start Payment Service ────────────────────────────────
-start_service "payment-service" "$JAR_DIR/payment-service/target/payment-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "payment-service" 8086
-
-# ── Step 12: Start Order Service ──────────────────────────────────
-start_service "order-service" "$JAR_DIR/order-service/target/order-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "order-service" 8085
-
-# ── Step 13: Start Delivery Service ───────────────────────────────
-start_service "delivery-service" "$JAR_DIR/delivery-service/target/delivery-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "delivery-service" 8088
-
-# ── Step 14: Start Review Service ─────────────────────────────────
-start_service "review-service" "$JAR_DIR/review-service/target/review-service-1.0.0-SNAPSHOT.jar"
-wait_for_port "review-service" 8091
+echo ""
+echo "[INFO] All 12 services launched — waiting for them to be ready..."
+wait_for_wave \
+  "auth-service:8081" \
+  "user-service:8082" \
+  "notification-service:8089" \
+  "api-gateway:8080" \
+  "product-service:8083" \
+  "inventory-service:8084" \
+  "coupon-service:8090" \
+  "cart-service:8087" \
+  "payment-service:8086" \
+  "order-service:8085" \
+  "delivery-service:8088" \
+  "review-service:8091"
 
 # ── Done ─────────────────────────────────────────────────────────
 echo ""

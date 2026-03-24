@@ -24,7 +24,7 @@ public class AuthEventConsumer {
     private final EmailService emailService;
     private final NotificationLogRepository logRepo;
 
-    @Value("${ADMIN_EMAIL:rahul2140kumar@gmail.com}")
+    @Value("${app.admin-email}")
     private String adminEmail;
 
     @KafkaListener(topics = "user.registered", groupId = "notification-service",
