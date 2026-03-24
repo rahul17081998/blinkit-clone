@@ -183,24 +183,38 @@ wait_for_wave \
   "review-service:8091"
 
 # ── Done ─────────────────────────────────────────────────────────
+# Detect public IP (works on Oracle Cloud; falls back to localhost)
+if [ "$PROFILE" = "prod" ]; then
+  PUBLIC_IP=$(curl -s --max-time 3 http://169.254.169.254/opc/v1/vnics/ 2>/dev/null \
+    | python3 -c "import sys,json; v=json.load(sys.stdin); print(v[0].get('publicIp',''))" 2>/dev/null)
+  if [ -z "$PUBLIC_IP" ]; then
+    PUBLIC_IP=$(curl -s --max-time 3 ifconfig.me 2>/dev/null || echo "YOUR_VM_IP")
+  fi
+  BASE="http://$PUBLIC_IP"
+else
+  BASE="http://localhost"
+fi
+
 echo ""
-echo "✔  All services are UP"
+echo "✔  All services are UP  (profile: $PROFILE)"
 echo ""
-echo "   Eureka dashboard  →  http://localhost:8761"
-echo "   Config Server     →  http://localhost:8888/actuator/health"
-echo "   API Gateway       →  http://localhost:8080/actuator/health"
-echo "   Auth Service      →  http://localhost:8081/swagger-ui.html"
-echo "   User Service      →  http://localhost:8082/swagger-ui.html"
-echo "   Notification Svc  →  http://localhost:8089/actuator/health"
-echo "   Product Service   →  http://localhost:8083/swagger-ui.html"
-echo "   Inventory Service →  http://localhost:8084/swagger-ui.html"
-echo "   Coupon Service    →  http://localhost:8090/swagger-ui.html"
-echo "   Cart Service      →  http://localhost:8087/swagger-ui.html"
-echo "   Payment Service   →  http://localhost:8086/swagger-ui.html"
-echo "   Order Service     →  http://localhost:8085/swagger-ui.html"
-echo "   Delivery Service  →  http://localhost:8088/actuator/health"
-echo "   Review Service    →  http://localhost:8091/swagger-ui.html"
-echo "   Kafka UI          →  http://localhost:9093"
-echo "   Redis Commander   →  http://localhost:9191"
+echo "   ── Public Access ────────────────────────────────────────"
+echo "   API Gateway (public) →  $BASE:8080/actuator/health"
+echo ""
+echo "   ── Internal (from VM only) ──────────────────────────────"
+echo "   Eureka dashboard     →  http://localhost:8761"
+echo "   Config Server        →  http://localhost:8888/actuator/health"
+echo "   Auth Service         →  http://localhost:8081/swagger-ui.html"
+echo "   User Service         →  http://localhost:8082/swagger-ui.html"
+echo "   Notification Svc     →  http://localhost:8089/actuator/health"
+echo "   Product Service      →  http://localhost:8083/swagger-ui.html"
+echo "   Inventory Service    →  http://localhost:8084/swagger-ui.html"
+echo "   Coupon Service       →  http://localhost:8090/swagger-ui.html"
+echo "   Cart Service         →  http://localhost:8087/swagger-ui.html"
+echo "   Payment Service      →  http://localhost:8086/swagger-ui.html"
+echo "   Order Service        →  http://localhost:8085/swagger-ui.html"
+echo "   Delivery Service     →  http://localhost:8088/actuator/health"
+echo "   Review Service       →  http://localhost:8091/swagger-ui.html"
+echo "   Kafka UI (SSH tunnel)→  http://localhost:9093"
 echo ""
 echo "   Stop all:  ./stop-backend.sh"
