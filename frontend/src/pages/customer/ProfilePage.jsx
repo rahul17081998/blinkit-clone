@@ -3,12 +3,13 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import {
   User, MapPin, Plus, Trash2, Star, Edit2, Check, X,
-  Home, Briefcase, Navigation, Phone, Calendar, Users, Mail, Shield, Camera,
+  Home, Briefcase, Navigation, Phone, Calendar, Users, Mail, Shield, Camera, AlertTriangle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { userApi } from '../../api/user.api';
 import { useAuthStore } from '../../stores/authStore';
 import { useProfileStore } from '../../stores/profileStore';
+import { useNavigate } from 'react-router-dom';
 import Header from '../../components/layout/Header';
 import FloatingCartBar from '../../components/cart/FloatingCartBar';
 
@@ -144,6 +145,74 @@ function AddressModal({ initial, onClose, onSaved }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Delete Account Confirmation Modal ────────────────────────────────────────
+
+function DeleteAccountModal({ onClose, onConfirm, deleting }) {
+  const [inputValue, setInputValue] = useState('');
+  const confirmed = inputValue === 'DELETE';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-red-100 bg-red-50 rounded-t-2xl">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={20} className="text-red-600" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-red-700">Delete Account</h3>
+            <p className="text-xs text-red-500 mt-0.5">This action cannot be undone</p>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          <p className="text-sm text-gray-700 leading-relaxed">
+            Permanently deleting your account will remove:
+          </p>
+          <ul className="text-sm text-gray-600 space-y-1.5 pl-1">
+            <li className="flex items-start gap-2"><span className="text-red-400 mt-0.5">✕</span> Your profile and personal data</li>
+            <li className="flex items-start gap-2"><span className="text-red-400 mt-0.5">✕</span> All saved addresses</li>
+            <li className="flex items-start gap-2"><span className="text-red-400 mt-0.5">✕</span> Order history and wallet balance</li>
+            <li className="flex items-start gap-2"><span className="text-red-400 mt-0.5">✕</span> All login sessions</li>
+          </ul>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3">
+            <p className="text-xs font-semibold text-yellow-800">
+              To confirm, type <span className="font-black tracking-widest">DELETE</span> below:
+            </p>
+            <input
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              placeholder="Type DELETE to confirm"
+              className="mt-2 w-full border border-yellow-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-400"
+              autoFocus
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 pb-6">
+          <button
+            onClick={onClose}
+            disabled={deleting}
+            className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={!confirmed || deleting}
+            className="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-xl text-sm hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {deleting ? 'Deleting...' : 'Delete My Account'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -513,16 +582,20 @@ function EditProfilePanel({ profile, email, role, onSaved }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-  const { email, role } = useAuthStore();
+  const { email, role, logout } = useAuthStore();
   const setProfile = useProfileStore(s => s.setProfile);
+  const clearProfile = useProfileStore(s => s.clearProfile);
+  const navigate = useNavigate();
 
-  const [profile,       setProfileState]  = useState(null);
-  const [profileLoading, setProfileLoading] = useState(true);
-  const [addresses,     setAddresses]     = useState([]);
-  const [addrLoading,   setAddrLoading]   = useState(true);
-  const [modal,         setModal]         = useState(null);
-  const [deleting,      setDeleting]      = useState(null);
-  const [settingDefault, setSettingDefault] = useState(null);
+  const [profile,            setProfileState]     = useState(null);
+  const [profileLoading,     setProfileLoading]   = useState(true);
+  const [addresses,          setAddresses]        = useState([]);
+  const [addrLoading,        setAddrLoading]      = useState(true);
+  const [modal,              setModal]            = useState(null);
+  const [deleting,           setDeleting]         = useState(null);
+  const [settingDefault,     setSettingDefault]   = useState(null);
+  const [showDeleteModal,    setShowDeleteModal]  = useState(false);
+  const [deletingAccount,    setDeletingAccount]  = useState(false);
 
   // Load profile
   useEffect(() => {
@@ -572,6 +645,20 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      await userApi.deleteAccount();
+      toast.success('Account deleted. Goodbye!');
+      clearProfile();
+      logout();
+      navigate('/login', { replace: true });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to delete account');
+      setDeletingAccount(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-blinkit-bg">
       <Header />
@@ -581,6 +668,14 @@ export default function ProfilePage() {
           initial={modal === 'new' ? null : modal}
           onClose={() => setModal(null)}
           onSaved={() => { setModal(null); loadAddresses(); }}
+        />
+      )}
+
+      {showDeleteModal && (
+        <DeleteAccountModal
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteAccount}
+          deleting={deletingAccount}
         />
       )}
 
@@ -620,6 +715,29 @@ export default function ProfilePage() {
           </div>
 
         </div>
+
+        {/* ── Danger Zone ── */}
+        <div className="mt-8 border border-red-200 rounded-2xl overflow-hidden">
+          <div className="bg-red-50 px-5 py-3 flex items-center gap-2">
+            <AlertTriangle size={15} className="text-red-500" />
+            <span className="text-sm font-bold text-red-700">Danger Zone</span>
+          </div>
+          <div className="px-5 py-4 flex items-center justify-between gap-4 bg-white">
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Delete my account</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Permanently removes your account, profile, addresses, and all data. This cannot be undone.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="flex-shrink-0 bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors"
+            >
+              Delete Account
+            </button>
+          </div>
+        </div>
+
       </main>
 
       <FloatingCartBar />
