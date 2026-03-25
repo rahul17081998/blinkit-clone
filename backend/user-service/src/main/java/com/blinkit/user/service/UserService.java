@@ -121,9 +121,15 @@ public class UserService {
     }
 
     public void deleteUserData(String userId) {
+        // Delete Cloudinary profile photo first (if any)
+        profileRepo.findByUserId(userId).ifPresent(profile -> {
+            if (profile.getProfileImageUrl() != null) {
+                cloudinaryService.deletePhoto(profile.getProfileImageUrl());
+            }
+        });
         profileRepo.deleteByUserId(userId);
         addressRepo.deleteByUserId(userId);
-        log.info("Hard deleted profile and addresses for userId={}", userId);
+        log.info("Hard deleted profile, addresses, and Cloudinary photo for userId={}", userId);
     }
 
     public Address setDefaultAddress(String userId, String addressId) {

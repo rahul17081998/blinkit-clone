@@ -2,6 +2,7 @@ import api from './axios';
 
 export const userApi = {
   getProfile:        ()                    => api.get('/api/users/profile'),
+  deleteAccount:     ()                    => api.delete('/api/auth/account'),
   updateProfile:     (data)                => api.put('/api/users/profile', data),
   uploadProfilePhoto: (file)               => {
     const form = new FormData();
