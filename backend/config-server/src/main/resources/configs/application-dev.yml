@@ -19,4 +19,4 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,env,beans,loggers
+        include: health,info,metrics,prometheus,env,beans,loggers

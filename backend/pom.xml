@@ -90,6 +90,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- Prometheus metrics registry — exposes /actuator/prometheus on every service -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
         <!-- Config Client — all services fetch shared config from config-server -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
