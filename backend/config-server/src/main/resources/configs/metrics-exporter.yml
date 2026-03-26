@@ -2,4 +2,13 @@ spring:
   data:
     mongodb:
       uri: ${MONGO_URI}
-      database: delivery_db
+      database: metrics_db   # default required by Spring autoconfiguration; MetricsService queries each DB directly via MongoClient
+      auto-index-creation: false
+  kafka:
+    admin:
+      fail-fast: false       # do not crash startup if Kafka broker is unreachable
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:unknown}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}

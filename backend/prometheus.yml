@@ -14,6 +14,18 @@ scrape_configs:
     static_configs:
       - targets: ['node-exporter:9100']
 
+  # ── Infrastructure services ───────────────────────────────────────────────────
+
+  - job_name: eureka-server
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8761']
+
+  - job_name: config-server
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8888']
+
   # ── Stage 2: All Spring Boot services ────────────────────────────────────────
 
   - job_name: api-gateway
@@ -66,7 +78,17 @@ scrape_configs:
     static_configs:
       - targets: ['host.docker.internal:8089']
 
-  - job_name: metrics-exporter
+  - job_name: coupon-service
     metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8090']
+
+  - job_name: review-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8091']
+
+  - job_name: metrics-exporter
+    metrics_path: /metrics
     static_configs:
       - targets: ['host.docker.internal:8092']

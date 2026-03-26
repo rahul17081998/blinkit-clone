@@ -1,0 +1,122 @@
+apiVersion: 1
+
+# ── Contact Points ────────────────────────────────────────────────────────────
+# ADMIN_EMAIL is loaded from .env.dev via env_file in docker-compose.monitoring.yml
+
+contactPoints:
+  - orgId: 1
+    name: blinkit-email
+    receivers:
+      - uid: blinkit-email-rcv-v1
+        type: email
+        settings:
+          addresses: ${ADMIN_EMAIL}
+          singleEmail: false
+          message: |
+            {{ len .Alerts.Firing }} alert(s) firing, {{ len .Alerts.Resolved }} resolved.
+
+            {{ range .Alerts.Firing }}
+            🔴 ALERT: {{ .Labels.alertname }}
+            Component : {{ .Labels.component }}
+            Summary   : {{ .Annotations.summary }}
+            Details   : {{ .Annotations.description }}
+            Fired at  : {{ .StartsAt.Format "2006-01-02 15:04:05 IST" }}
+            {{ end }}
+
+            {{ range .Alerts.Resolved }}
+            ✅ RESOLVED: {{ .Labels.alertname }}
+            Component : {{ .Labels.component }}
+            Resolved  : {{ .EndsAt.Format "2006-01-02 15:04:05 IST" }}
+            {{ end }}
+        disableResolveMessage: false
+
+# ── Notification Policy ───────────────────────────────────────────────────────
+policies:
+  - orgId: 1
+    receiver: blinkit-email
+    group_by: ['alertname', 'component']
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 2h
+
+# ── Alert Rules ───────────────────────────────────────────────────────────────
+groups:
+  - orgId: 1
+    name: infra-health
+    folder: Blinkit Alerts
+    interval: 1m
+
+    rules:
+
+      # Fires when any individual component (MongoDB/Redis/Kafka/CDN) is FAILED for > 1 min
+      - uid: infra-comp-down-v2
+        title: Infrastructure Component Down
+        condition: C
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.component }} is DOWN"
+          description: "{{ $labels.component }} has been FAILED for more than 1 minute. Check the Blinkit Grafana infra health panel."
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 300
+              to: 0
+            model:
+              expr: blinkit_infra_status{component!="OVERALL"}
+              instant: true
+              legendFormat: "{{ component }}"
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [1]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
+
+      # Fires when OVERALL is FAILED for > 2 min (one or more components are down)
+      - uid: infra-overall-down-v2
+        title: Blinkit Infrastructure Degraded
+        condition: C
+        for: 2m
+        labels:
+          severity: critical
+          component: OVERALL
+        annotations:
+          summary: "Blinkit infrastructure is DEGRADED"
+          description: "One or more infrastructure components (MongoDB/Redis/Kafka/CDN) are DOWN. Check the Grafana infra health panel immediately."
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 300
+              to: 0
+            model:
+              expr: blinkit_infra_status{component="OVERALL"}
+              instant: true
+              legendFormat: OVERALL
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [1]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
