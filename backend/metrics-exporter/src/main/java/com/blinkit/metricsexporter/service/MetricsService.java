@@ -204,14 +204,15 @@ public class MetricsService {
                     .tag("component", p.getComponent())
                     .register(registry);
 
-            // Info metric — drives the Grafana table (status, response time, last checked, error)
+            // Info metric — drives the Grafana table (status, response time, last checked, next check, error)
             Gauge.builder("blinkit_infra_info", () -> 1.0)
                     .description("Infrastructure component health snapshot")
-                    .tag("component",    p.getComponent())
-                    .tag("status",       p.getStatus())
-                    .tag("response_ms",  String.valueOf(p.getResponseTimeMs()))
-                    .tag("last_checked", p.getLastChecked())
-                    .tag("error",        p.getErrorMessage())
+                    .tag("component",      p.getComponent())
+                    .tag("status",         p.getStatus())
+                    .tag("response_ms",    String.valueOf(p.getResponseTimeMs()))
+                    .tag("last_checked",   p.getLastChecked())
+                    .tag("next_check",     p.getNextScheduled() != null ? p.getNextScheduled() : "-")
+                    .tag("error",          p.getErrorMessage())
                     .register(registry);
         }
 

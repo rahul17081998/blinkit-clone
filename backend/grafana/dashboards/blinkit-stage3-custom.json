@@ -2217,13 +2217,15 @@
               "status": 1,
               "response_ms": 2,
               "last_checked": 3,
-              "error": 4
+              "next_check": 4,
+              "error": 5
             },
             "renameByName": {
               "component": "Infra Name",
               "status": "Is Healthy",
               "response_ms": "Response (ms)",
               "last_checked": "Last Checked",
+              "next_check": "Next Scheduled Check",
               "error": "Error"
             }
           }
@@ -2340,6 +2342,18 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "next_check"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "error"
             },
             "properties": [
@@ -2353,13 +2367,25 @@
       }
     },
     {
+      "type": "row",
+      "id": 75,
+      "title": "MongoDB / Business Metrics",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
       "type": "text",
       "id": 1,
       "gridPos": {
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 17
       },
       "options": {
         "mode": "markdown",
@@ -2376,7 +2402,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 18
+        "y": 19
       },
       "fieldConfig": {
         "defaults": {
@@ -2428,7 +2454,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 18
+        "y": 19
       },
       "fieldConfig": {
         "defaults": {
@@ -2480,7 +2506,7 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 18
+        "y": 19
       },
       "fieldConfig": {
         "defaults": {
@@ -2532,7 +2558,7 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 18
+        "y": 19
       },
       "fieldConfig": {
         "defaults": {
@@ -2593,7 +2619,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 23
       },
       "fieldConfig": {
         "defaults": {
@@ -2702,7 +2728,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 31
       },
       "options": {
         "mode": "markdown",
@@ -2719,7 +2745,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 32
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -2771,7 +2797,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 32
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -2823,7 +2849,7 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 32
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -2875,7 +2901,7 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 32
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -2927,7 +2953,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 36
+        "y": 37
       },
       "fieldConfig": {
         "defaults": {
@@ -3058,7 +3084,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 36
+        "y": 37
       },
       "fieldConfig": {
         "defaults": {
@@ -3191,7 +3217,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 44
+        "y": 45
       },
       "options": {
         "mode": "markdown",
@@ -3209,7 +3235,7 @@
         "h": 4,
         "w": 12,
         "x": 0,
-        "y": 46
+        "y": 47
       },
       "fieldConfig": {
         "defaults": {
@@ -3269,7 +3295,7 @@
         "h": 4,
         "w": 12,
         "x": 12,
-        "y": 46
+        "y": 47
       },
       "fieldConfig": {
         "defaults": {
@@ -3323,7 +3349,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 50
+        "y": 51
       },
       "options": {
         "mode": "markdown",
@@ -3683,7 +3709,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 52
+        "y": 53
       },
       "id": 30,
       "options": {
@@ -3774,7 +3800,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 62
+        "y": 63
       },
       "options": {
         "mode": "markdown",
@@ -3792,7 +3818,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 64
+        "y": 65
       },
       "pluginVersion": "10.4.2",
       "fieldConfig": {
@@ -4140,7 +4166,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Blinkit \u2014 Custom Business Metrics (Stage 3)",
+  "title": "Blinkit \u2014 Business & Infrastructure Metrics",
   "uid": "blinkit-stage3-custom",
   "version": 18
 }

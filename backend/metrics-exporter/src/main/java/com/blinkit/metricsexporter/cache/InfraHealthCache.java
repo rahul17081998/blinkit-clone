@@ -64,6 +64,9 @@ public class InfraHealthCache {
     @Value("${cloudinary.api-secret:}")
     private String cloudinaryApiSecret;
 
+    @Value("${infra.health.check.interval-ms:1800000}")
+    private long intervalMs;
+
     private static final String TEST_DB         = "infra_health_check_db";
     private static final String TEST_COLLECTION = "health_probe";
     private static final String REDIS_TEST_KEY  = "infra:health:probe";
@@ -80,8 +83,8 @@ public class InfraHealthCache {
     @PostConstruct
     public void init() { refresh(); }
 
-    // Every 30 minutes
-    @Scheduled(fixedDelay = 30 * 60 * 1_000)
+    // Interval driven by INFRA_HEALTH_CHECK_INTERVAL_MS env var (default 30 min)
+    @Scheduled(fixedDelayString = "${infra.health.check.interval-ms:1800000}")
     public void refresh() {
         log.info("InfraHealthCache — starting health checks");
 
@@ -100,6 +103,14 @@ public class InfraHealthCache {
                 .lastChecked(FORMATTER.format(Instant.now()))
                 .errorMessage(allOk ? "none" : buildFailedList(mongo, redis, kafka, cdn))
                 .build();
+
+        // Compute next scheduled check time (now + interval)
+        String nextScheduled = FORMATTER.format(Instant.now().plusMillis(intervalMs));
+        mongo.setNextScheduled(nextScheduled);
+        redis.setNextScheduled(nextScheduled);
+        kafka.setNextScheduled(nextScheduled);
+        cdn.setNextScheduled(nextScheduled);
+        overall.setNextScheduled(nextScheduled);
 
         cache.put("MONGODB", mongo);
         cache.put("REDIS",   redis);
