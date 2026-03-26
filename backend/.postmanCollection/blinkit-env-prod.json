@@ -1,0 +1,12 @@
+{
+  "name": "Blinkit PROD",
+  "_postman_variable_scope": "environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://140.238.244.245:8080",
+      "type": "default",
+      "enabled": true
+    }
+  ]
+}

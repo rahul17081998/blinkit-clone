@@ -1,0 +1,12 @@
+{
+  "name": "Blinkit DEV",
+  "_postman_variable_scope": "environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "default",
+      "enabled": true
+    }
+  ]
+}
