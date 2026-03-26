@@ -52,6 +52,18 @@ services:
     networks:
       - monitoring
 
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    container_name: blinkit-kafka-exporter
+    restart: unless-stopped
+    ports:
+      - "9308:9308"
+    command:
+      - "--kafka.server=kafka:29092"   # internal Docker listener — avoids localhost:9092 resolution issue
+    networks:
+      - monitoring
+      - backend_blinkit-network         # joins infra network so 'kafka' hostname resolves
+
   node-exporter:
     image: prom/node-exporter:v1.7.0
     container_name: blinkit-node-exporter
@@ -77,3 +89,5 @@ volumes:
 networks:
   monitoring:
     driver: bridge
+  backend_blinkit-network:
+    external: true                     # created by docker-compose.infra.yml

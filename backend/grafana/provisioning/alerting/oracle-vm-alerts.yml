@@ -1,0 +1,165 @@
+apiVersion: 1
+
+# ── Oracle VM Free Tier — Resource Alerts ─────────────────────────────────────
+# Fires when CPU / RAM / Disk exceed 80% on the Oracle VM for more than 5 minutes.
+# Also fires when monthly outbound traffic exceeds 80% of the 10 TB free tier limit.
+#
+# Contact point (blinkit-email) and root notification policy are defined in
+# infra-alerts.yml — this file only adds alert rules.
+# All credentials come from .env.dev via env_file in docker-compose.monitoring.yml.
+
+groups:
+  - orgId: 1
+    name: oracle-vm-resources
+    folder: Blinkit Alerts
+    interval: 1m
+
+    rules:
+
+      # ── CPU > 80% for 5 minutes ──────────────────────────────────────────────
+      - uid: oracle-cpu-high-v1
+        title: "Oracle VM — CPU Usage High (>80%)"
+        condition: C
+        for: 5m
+        labels:
+          severity: warning
+          resource: cpu
+        annotations:
+          summary: "Oracle VM CPU above 80%"
+          description: "CPU usage has been above 80% for more than 5 minutes. Current: {{ $value | printf \"%.1f\" }}%. Oracle free tier has 4 OCPU — sustained high CPU may indicate a runaway process."
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 300
+              to: 0
+            model:
+              expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle",job="node-exporter"}[5m])) * 100)
+              instant: true
+              legendFormat: CPU %
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [80]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
+
+      # ── RAM > 80% for 5 minutes ──────────────────────────────────────────────
+      - uid: oracle-ram-high-v1
+        title: "Oracle VM — RAM Usage High (>80%)"
+        condition: C
+        for: 5m
+        labels:
+          severity: warning
+          resource: ram
+        annotations:
+          summary: "Oracle VM RAM above 80%"
+          description: "RAM usage has been above 80% for more than 5 minutes. Current: {{ $value | printf \"%.1f\" }}%. Oracle free tier has 24 GB RAM — risk of OOM kills if this continues rising."
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 300
+              to: 0
+            model:
+              expr: (1 - (node_memory_MemAvailable_bytes{job="node-exporter"} / node_memory_MemTotal_bytes{job="node-exporter"})) * 100
+              instant: true
+              legendFormat: RAM %
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [80]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
+
+      # ── Disk > 80% for 5 minutes ─────────────────────────────────────────────
+      - uid: oracle-disk-high-v1
+        title: "Oracle VM — Disk Usage High (>80%)"
+        condition: C
+        for: 5m
+        labels:
+          severity: warning
+          resource: disk
+        annotations:
+          summary: "Oracle VM Disk above 80%"
+          description: "Disk usage on / has been above 80% for more than 5 minutes. Current: {{ $value | printf \"%.1f\" }}%. Oracle free tier has 47 GB SSD — running out of disk will crash all services."
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 300
+              to: 0
+            model:
+              expr: (1 - (node_filesystem_avail_bytes{job="node-exporter",mountpoint="/",fstype!="tmpfs"} / node_filesystem_size_bytes{job="node-exporter",mountpoint="/",fstype!="tmpfs"})) * 100
+              instant: true
+              legendFormat: Disk %
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [80]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
+
+      # ── Outbound traffic > 80% of 10 TB free tier limit ──────────────────────
+      - uid: oracle-outbound-high-v1
+        title: "Oracle VM — Outbound Traffic Approaching 10 TB Limit"
+        condition: C
+        for: 10m
+        labels:
+          severity: critical
+          resource: network
+        annotations:
+          summary: "Oracle VM monthly outbound exceeds 80% of free tier (8 TB)"
+          description: "Monthly outbound traffic has exceeded 8 TB (80% of Oracle free tier 10 TB limit). Current: {{ $value | printf \"%.0f\" }} GB. Charges will apply above 10,240 GB."
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 300
+              to: 0
+            model:
+              expr: sum(increase(node_network_transmit_bytes_total{device!="lo",job="node-exporter"}[30d])) / 1073741824
+              instant: true
+              legendFormat: Outbound GB
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [8192]
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: last
