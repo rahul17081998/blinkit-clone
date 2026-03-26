@@ -76,10 +76,14 @@ fi
 echo "──────────────────────────────────────────────────"
 echo ""
 
-# ── Helper: start a service ──────────────────────────────────────
+# ── JVM heap cap per service (keeps total RAM manageable on dev machines)
+JVM_OPTS="-Xms128m -Xmx384m"
+
+# ── Helper: start a service and wait for it to be ready ─────────
 start_service() {
   local name=$1
   local jar=$2
+  local port=$3
   local log="$LOG_DIR/${name}.log"
 
   if [ ! -f "$jar" ]; then
@@ -89,10 +93,15 @@ start_service() {
   fi
 
   echo "[INFO] Starting $name (profile=$PROFILE)..."
-  java -jar "$jar" --spring.profiles.active="$PROFILE" > "$log" 2>&1 &
+  java $JVM_OPTS -jar "$jar" --spring.profiles.active="$PROFILE" > "$log" 2>&1 &
   local pid=$!
   echo "$name=$pid" >> "$PID_FILE"
   echo "[INFO] $name started (PID $pid) — logs: logs/${name}.log"
+
+  # Wait for service to be ready before moving to the next one
+  if [ -n "$port" ]; then
+    wait_for_port "$name" "$port"
+  fi
 }
 
 # ── Helper: wait for a port to be ready ─────────────────────────
@@ -135,16 +144,14 @@ wait_for_wave() {
 # ═══════════════════════════════════════════════════════════════════
 echo ""
 echo "── Wave 1: Eureka Server ──────────────────────────────────────"
-start_service "eureka-server" "$JAR_DIR/eureka-server/target/eureka-server-1.0.0-SNAPSHOT.jar"
-wait_for_port "eureka-server" 8761
+start_service "eureka-server" "$JAR_DIR/eureka-server/target/eureka-server-1.0.0-SNAPSHOT.jar" 8761
 
 # ═══════════════════════════════════════════════════════════════════
 # WAVE 2 — Config Server  (all services pull config from here)
 # ═══════════════════════════════════════════════════════════════════
 echo ""
 echo "── Wave 2: Config Server ──────────────────────────────────────"
-start_service "config-server" "$JAR_DIR/config-server/target/config-server-1.0.0-SNAPSHOT.jar"
-wait_for_port "config-server" 8888
+start_service "config-server" "$JAR_DIR/config-server/target/config-server-1.0.0-SNAPSHOT.jar" 8888
 
 # ═══════════════════════════════════════════════════════════════════
 # WAVE 3 — All business services in parallel
@@ -152,35 +159,20 @@ wait_for_port "config-server" 8888
 #    no service calls any other service during boot)
 # ═══════════════════════════════════════════════════════════════════
 echo ""
-echo "── Wave 3: All business services (parallel) ───────────────────"
-start_service "auth-service"         "$JAR_DIR/auth-service/target/auth-service-1.0.0-SNAPSHOT.jar"
-start_service "user-service"         "$JAR_DIR/user-service/target/user-service-1.0.0-SNAPSHOT.jar"
-start_service "notification-service" "$JAR_DIR/notification-service/target/notification-service-1.0.0-SNAPSHOT.jar"
-start_service "api-gateway"          "$JAR_DIR/api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar"
-start_service "product-service"      "$JAR_DIR/product-service/target/product-service-1.0.0-SNAPSHOT.jar"
-start_service "inventory-service"    "$JAR_DIR/inventory-service/target/inventory-service-1.0.0-SNAPSHOT.jar"
-start_service "coupon-service"       "$JAR_DIR/coupon-service/target/coupon-service-1.0.0-SNAPSHOT.jar"
-start_service "cart-service"         "$JAR_DIR/cart-service/target/cart-service-1.0.0-SNAPSHOT.jar"
-start_service "payment-service"      "$JAR_DIR/payment-service/target/payment-service-1.0.0-SNAPSHOT.jar"
-start_service "order-service"        "$JAR_DIR/order-service/target/order-service-1.0.0-SNAPSHOT.jar"
-start_service "delivery-service"     "$JAR_DIR/delivery-service/target/delivery-service-1.0.0-SNAPSHOT.jar"
-start_service "review-service"       "$JAR_DIR/review-service/target/review-service-1.0.0-SNAPSHOT.jar"
-
-echo ""
-echo "[INFO] All 12 services launched — waiting for them to be ready..."
-wait_for_wave \
-  "auth-service:8081" \
-  "user-service:8082" \
-  "notification-service:8089" \
-  "api-gateway:8080" \
-  "product-service:8083" \
-  "inventory-service:8084" \
-  "coupon-service:8090" \
-  "cart-service:8087" \
-  "payment-service:8086" \
-  "order-service:8085" \
-  "delivery-service:8088" \
-  "review-service:8091"
+echo "── Wave 3: Business services (one by one) ─────────────────────"
+start_service "auth-service"         "$JAR_DIR/auth-service/target/auth-service-1.0.0-SNAPSHOT.jar"         8081
+start_service "user-service"         "$JAR_DIR/user-service/target/user-service-1.0.0-SNAPSHOT.jar"         8082
+start_service "notification-service" "$JAR_DIR/notification-service/target/notification-service-1.0.0-SNAPSHOT.jar" 8089
+start_service "api-gateway"          "$JAR_DIR/api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar"           8080
+start_service "product-service"      "$JAR_DIR/product-service/target/product-service-1.0.0-SNAPSHOT.jar"   8083
+start_service "inventory-service"    "$JAR_DIR/inventory-service/target/inventory-service-1.0.0-SNAPSHOT.jar" 8084
+start_service "coupon-service"       "$JAR_DIR/coupon-service/target/coupon-service-1.0.0-SNAPSHOT.jar"     8090
+start_service "cart-service"         "$JAR_DIR/cart-service/target/cart-service-1.0.0-SNAPSHOT.jar"         8087
+start_service "payment-service"      "$JAR_DIR/payment-service/target/payment-service-1.0.0-SNAPSHOT.jar"   8086
+start_service "order-service"        "$JAR_DIR/order-service/target/order-service-1.0.0-SNAPSHOT.jar"       8085
+start_service "delivery-service"     "$JAR_DIR/delivery-service/target/delivery-service-1.0.0-SNAPSHOT.jar" 8088
+start_service "review-service"       "$JAR_DIR/review-service/target/review-service-1.0.0-SNAPSHOT.jar"     8091
+start_service "metrics-exporter"     "$JAR_DIR/metrics-exporter/target/metrics-exporter-1.0.0-SNAPSHOT.jar" 8092
 
 # ── Done ─────────────────────────────────────────────────────────
 # Detect public IP (works on Oracle Cloud; falls back to localhost)

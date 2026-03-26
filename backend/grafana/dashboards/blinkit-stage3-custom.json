@@ -1,0 +1,241 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+
+    {
+      "type": "text",
+      "id": 1,
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "markdown",
+        "content": "## Delivery Partners",
+        "justifyContent": "left"
+      },
+      "title": ""
+    },
+
+    {
+      "type": "stat",
+      "id": 2,
+      "title": "Available Partners",
+      "description": "Delivery partners ready for assignment",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 2 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "green" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "blinkit_delivery_partners_available{job=\"metrics-exporter\"}",
+          "instant": true,
+          "legendFormat": "Available",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "stat",
+      "id": 3,
+      "title": "On Delivery (Unavailable)",
+      "description": "Delivery partners currently on an active delivery",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 2 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "orange" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "blinkit_delivery_partners_unavailable{job=\"metrics-exporter\"}",
+          "instant": true,
+          "legendFormat": "On Delivery",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "stat",
+      "id": 4,
+      "title": "Total Active Partners",
+      "description": "Total registered and active delivery partners",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 2 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "blue" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "blinkit_delivery_partners{job=\"metrics-exporter\"}",
+          "instant": true,
+          "legendFormat": "Total",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "stat",
+      "id": 5,
+      "title": "Availability Rate",
+      "description": "% of active partners currently available",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 2 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 25 },
+              { "color": "green", "value": 50 }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * blinkit_delivery_partners_available{job=\"metrics-exporter\"} / clamp_min(blinkit_delivery_partners{job=\"metrics-exporter\"}, 1)",
+          "instant": true,
+          "legendFormat": "Availability %",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "id": 6,
+      "title": "Delivery Partner Availability Over Time",
+      "description": "Available vs on-delivery partners — refreshed every 30s by metrics-exporter",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "spanNulls": false,
+            "showPoints": "auto"
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Available" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "On Delivery" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Total" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "blinkit_delivery_partners_available{job=\"metrics-exporter\"}",
+          "legendFormat": "Available",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "blinkit_delivery_partners_unavailable{job=\"metrics-exporter\"}",
+          "legendFormat": "On Delivery",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "blinkit_delivery_partners{job=\"metrics-exporter\"}",
+          "legendFormat": "Total",
+          "refId": "C"
+        }
+      ]
+    }
+
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["blinkit", "custom-metrics", "stage3"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Blinkit — Custom Business Metrics (Stage 3)",
+  "uid": "blinkit-stage3-custom",
+  "version": 1
+}
