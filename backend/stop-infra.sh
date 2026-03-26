@@ -50,15 +50,14 @@ else
     ENV_FILE="$SCRIPT_DIR/.env.dev"
   fi
 
-  if [ -f "$SCRIPT_DIR/docker-compose.monitoring.yml" ]; then
-    if [ -n "$ENV_FILE" ]; then
-      set -o allexport && source "$ENV_FILE" && set +o allexport
-    fi
-    docker compose -f "$SCRIPT_DIR/docker-compose.monitoring.yml" down 2>/dev/null
-    echo "[STOP] ✅ Monitoring stack stopped."
-  else
-    echo "[STOP] docker-compose.monitoring.yml not found — skipping."
+  if [ -n "$ENV_FILE" ]; then
+    set -o allexport && source "$ENV_FILE" && set +o allexport
   fi
+  # Stop both dev and prod compose files — they share the same container names,
+  # so whichever was used to start the stack, this ensures it's fully stopped.
+  docker compose -f "$SCRIPT_DIR/docker-compose.monitoring.yml" down 2>/dev/null
+  docker compose -f "$SCRIPT_DIR/docker-compose.monitoring.prod.yml" down 2>/dev/null
+  echo "[STOP] ✅ Monitoring stack stopped."
 fi
 
 # ── Step 3: Stop Colima (macOS only) ─────────────────────────────

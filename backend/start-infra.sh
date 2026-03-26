@@ -150,11 +150,20 @@ echo ""
 # If Kafka did a clean restart above, the network was recreated with a
 # new ID — monitoring containers must be recreated fresh or kafka-exporter
 # will show as DOWN in Prometheus/Grafana.
-if [ -f "$SCRIPT_DIR/docker-compose.monitoring.yml" ]; then
+# Select monitoring compose file: prod profile → prod compose, otherwise dev
+if [ "${PROFILE:-dev}" = "prod" ] && [ -f "$SCRIPT_DIR/docker-compose.monitoring.prod.yml" ]; then
+  MONITORING_COMPOSE="$SCRIPT_DIR/docker-compose.monitoring.prod.yml"
+elif [ -f "$SCRIPT_DIR/docker-compose.monitoring.yml" ]; then
+  MONITORING_COMPOSE="$SCRIPT_DIR/docker-compose.monitoring.yml"
+else
+  MONITORING_COMPOSE=""
+fi
+
+if [ -n "$MONITORING_COMPOSE" ]; then
   echo "[INFRA] Starting monitoring stack (Prometheus + Grafana + kafka-exporter)..."
 
   ENV_FILE=""
-  if [ -f "$SCRIPT_DIR/.env.prod" ] && [ "${PROFILE:-dev}" = "prod" ]; then
+  if [ "${PROFILE:-dev}" = "prod" ] && [ -f "$SCRIPT_DIR/.env.prod" ]; then
     ENV_FILE="$SCRIPT_DIR/.env.prod"
   elif [ -f "$SCRIPT_DIR/.env.dev" ]; then
     ENV_FILE="$SCRIPT_DIR/.env.dev"
@@ -165,12 +174,12 @@ if [ -f "$SCRIPT_DIR/docker-compose.monitoring.yml" ]; then
   fi
 
   # Bring down first to clear any stale network references, then bring up fresh
-  docker compose -f "$SCRIPT_DIR/docker-compose.monitoring.yml" down 2>/dev/null
-  docker compose -f "$SCRIPT_DIR/docker-compose.monitoring.yml" up -d 2>/dev/null
+  docker compose -f "$MONITORING_COMPOSE" down 2>/dev/null
+  docker compose -f "$MONITORING_COMPOSE" up -d 2>/dev/null
   echo "[INFRA] ✅ Monitoring stack started."
   echo "        Prometheus → http://localhost:9090"
   echo "        Grafana    → http://localhost:3000"
   echo ""
 else
-  echo "[INFRA] docker-compose.monitoring.yml not found — skipping monitoring startup."
+  echo "[INFRA] No monitoring compose file found — skipping monitoring startup."
 fi
