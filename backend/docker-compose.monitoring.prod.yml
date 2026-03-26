@@ -14,8 +14,6 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=15d'
       - '--web.enable-lifecycle'
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       - monitoring
 
@@ -26,13 +24,11 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - .env.dev                          # source of all secrets — never hardcoded here
+      - .env.prod                         # production secrets
     environment:
-      # Admin credentials from .env.dev
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
-      # SMTP — all values from .env.dev
       - GF_SMTP_ENABLED=true
       - GF_SMTP_HOST=${SMTP_HOST}:${SMTP_PORT}
       - GF_SMTP_USER=${SMTP_USERNAME}
@@ -40,18 +36,18 @@ services:
       - GF_SMTP_FROM_ADDRESS=${SMTP_USERNAME}
       - GF_SMTP_FROM_NAME=Blinkit Monitoring
       - GF_SMTP_STARTTLS_POLICY=MandatoryStartTLS
-      # Unified alerting
       - GF_ALERTING_ENABLED=false
       - GF_UNIFIED_ALERTING_ENABLED=true
     volumes:
       - grafana_data:/var/lib/grafana
-      # Dev: mount provisioning subdirs individually so oracle-vm-alerts.yml is excluded
+      # Prod: datasources — same as dev
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./grafana/provisioning/alerting/infra-alerts.yml:/etc/grafana/provisioning/alerting/infra-alerts.yml:ro
-      # Dev: both main dashboards and dev-only dashboards (includes Mac System Resources)
+      # Prod: only dashboards.yml — dev-dashboards.yml (Mac System Resources) NOT mounted
+      - ./grafana/provisioning/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      # Prod: full alerting directory — includes oracle-vm-alerts.yml
+      - ./grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
+      # Prod: main dashboards only — dashboards-dev/ (Mac System Resources) NOT mounted
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-      - ./grafana/dashboards-dev:/var/lib/grafana/dashboards-dev:ro
     depends_on:
       - prometheus
     networks:
@@ -64,10 +60,8 @@ services:
     ports:
       - "9308:9308"
     command:
-      - "--kafka.server=kafka:29092"   # internal Docker listener — avoids localhost:9092 resolution issue
-    networks:
-      - monitoring
-      - backend_blinkit-network         # joins infra network so 'kafka' hostname resolves
+      - "--kafka.server=localhost:9092"   # on Oracle VM, Kafka runs on host
+    network_mode: host                    # Kafka is on the host, not in Docker on Oracle VM
 
   node-exporter:
     image: prom/node-exporter:v1.7.0
@@ -94,5 +88,3 @@ volumes:
 networks:
   monitoring:
     driver: bridge
-  backend_blinkit-network:
-    external: true                     # created by docker-compose.infra.yml
