@@ -18,7 +18,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info   # restrict actuator exposure in prod
+        include: health,info,metrics,prometheus   # include prometheus for Grafana monitoring
   endpoint:
     health:
       show-details: when-authorized  # hide internals from anonymous callers

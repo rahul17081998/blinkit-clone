@@ -76,6 +76,12 @@ if [ -z "$REDIS_RUNNING" ] || [ -z "$KAFKA_RUNNING" ]; then
   KAFKA_EXITED=$(docker ps -a --filter "name=blinkit-kafka" --filter "status=exited" --format "{{.Names}}" 2>/dev/null | grep -x "blinkit-kafka" || true)
   if [ -n "$KAFKA_EXITED" ]; then
     echo "[INFRA] Kafka failed to start (likely stale Zookeeper data). Doing clean restart..."
+    # NOTE: down -v removes backend_blinkit-network and recreates it with a new ID.
+    # Any monitoring containers (Prometheus, Grafana, kafka-exporter) that were running
+    # will hold a stale reference to the old network ID and fail to restart later.
+    # Fix: after start-backend.sh completes, restart the monitoring stack:
+    #   docker compose -f docker-compose.monitoring.yml down
+    #   docker compose -f docker-compose.monitoring.yml up -d
     $COMPOSE_CMD down -v
     $COMPOSE_CMD up -d
     echo "[INFRA] Clean restart done."
@@ -137,3 +143,34 @@ echo "        Kafka    → localhost:9092"
 echo "        Kafka UI → http://localhost:9093"
 echo "        Redis UI → http://localhost:9191"
 echo ""
+
+# ── Step 5: Start monitoring stack ───────────────────────────────
+# Always restarted here (down then up) to ensure monitoring containers
+# reconnect to the current backend_blinkit-network.
+# If Kafka did a clean restart above, the network was recreated with a
+# new ID — monitoring containers must be recreated fresh or kafka-exporter
+# will show as DOWN in Prometheus/Grafana.
+if [ -f "$SCRIPT_DIR/docker-compose.monitoring.yml" ]; then
+  echo "[INFRA] Starting monitoring stack (Prometheus + Grafana + kafka-exporter)..."
+
+  ENV_FILE=""
+  if [ -f "$SCRIPT_DIR/.env.prod" ] && [ "${PROFILE:-dev}" = "prod" ]; then
+    ENV_FILE="$SCRIPT_DIR/.env.prod"
+  elif [ -f "$SCRIPT_DIR/.env.dev" ]; then
+    ENV_FILE="$SCRIPT_DIR/.env.dev"
+  fi
+
+  if [ -n "$ENV_FILE" ]; then
+    set -o allexport && source "$ENV_FILE" && set +o allexport
+  fi
+
+  # Bring down first to clear any stale network references, then bring up fresh
+  docker compose -f "$SCRIPT_DIR/docker-compose.monitoring.yml" down 2>/dev/null
+  docker compose -f "$SCRIPT_DIR/docker-compose.monitoring.yml" up -d 2>/dev/null
+  echo "[INFRA] ✅ Monitoring stack started."
+  echo "        Prometheus → http://localhost:9090"
+  echo "        Grafana    → http://localhost:3000"
+  echo ""
+else
+  echo "[INFRA] docker-compose.monitoring.yml not found — skipping monitoring startup."
+fi

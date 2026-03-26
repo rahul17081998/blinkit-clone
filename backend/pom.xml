@@ -52,6 +52,9 @@
 
         <!-- Stage 7 — Reviews -->
         <module>review-service</module>
+
+        <!-- Stage 8 — Monitoring -->
+        <module>metrics-exporter</module>
     </modules>
 
     <!-- ─── Global Properties ────────────────────────────────────── -->
@@ -89,6 +92,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Prometheus metrics registry — exposes /actuator/prometheus on every service -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
         <!-- Config Client — all services fetch shared config from config-server -->
         <dependency>

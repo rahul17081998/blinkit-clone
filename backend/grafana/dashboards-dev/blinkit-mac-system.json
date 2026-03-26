@@ -1,0 +1,332 @@
+{
+  "title": "Blinkit — Mac System Resources",
+  "uid": "blinkit-mac-system",
+  "schemaVersion": 38,
+  "version": 3,
+  "refresh": "30s",
+  "tags": ["blinkit", "mac", "system"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "annotations": { "list": [] },
+  "templating": { "list": [] },
+  "links": [],
+  "panels": [
+
+    {
+      "id": 100,
+      "type": "text",
+      "title": "",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 2 },
+      "options": { "mode": "markdown", "content": "## System Configuration  *(source: Spring Boot actuator — native Mac process)*" },
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    },
+
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "CPU Cores",
+      "gridPos": { "x": 0, "y": 2, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto", "colorMode": "none", "graphMode": "none", "orientation": "auto" },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(system_cpu_count{job!=\"node-exporter\"})", "instant": true, "legendFormat": "Cores" }]
+    },
+
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total SSD",
+      "gridPos": { "x": 4, "y": 2, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto", "colorMode": "none", "graphMode": "none", "orientation": "auto" },
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(disk_total_bytes{job!=\"node-exporter\"})", "instant": true, "legendFormat": "Total SSD" }]
+    },
+
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Total RAM",
+      "description": "Available in Stage 3 (metrics-exporter) via OperatingSystemMXBean",
+      "gridPos": { "x": 8, "y": 2, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "value", "colorMode": "none", "graphMode": "none", "orientation": "auto", "noValue": "Stage 3" },
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "mac_system_memory_total_bytes", "instant": true, "legendFormat": "Total RAM" }]
+    },
+
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "System Load Avg (1m)",
+      "description": "Healthy = below CPU core count (8). High = system is overloaded.",
+      "gridPos": { "x": 12, "y": 2, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto", "colorMode": "background", "graphMode": "area", "orientation": "auto" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short", "decimals": 2,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 8 }, { "color": "red", "value": 16 }] },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(system_load_average_1m{job!=\"node-exporter\"})", "instant": true, "legendFormat": "Load 1m" }]
+    },
+
+    {
+      "id": 101,
+      "type": "text",
+      "title": "",
+      "gridPos": { "x": 0, "y": 6, "w": 24, "h": 2 },
+      "options": { "mode": "markdown", "content": "## Current Usage" },
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    },
+
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "CPU Usage %",
+      "gridPos": { "x": 0, "y": 8, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto", "colorMode": "background", "graphMode": "area", "orientation": "auto" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 60 }, { "color": "red", "value": 85 }] },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(system_cpu_usage{job!=\"node-exporter\"}) * 100", "instant": true, "legendFormat": "CPU %" }]
+    },
+
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "SSD Used",
+      "gridPos": { "x": 4, "y": 8, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto", "colorMode": "none", "graphMode": "none", "orientation": "auto" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes", "decimals": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] }
+        },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(disk_total_bytes{job!=\"node-exporter\"}) - avg(disk_free_bytes{job!=\"node-exporter\"})", "instant": true, "legendFormat": "SSD Used" }]
+    },
+
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "SSD Free",
+      "gridPos": { "x": 8, "y": 8, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto", "colorMode": "none", "graphMode": "none", "orientation": "auto" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes", "decimals": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] }
+        },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(disk_free_bytes{job!=\"node-exporter\"})", "instant": true, "legendFormat": "SSD Free" }]
+    },
+
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "SSD Usage %",
+      "gridPos": { "x": 12, "y": 8, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto", "colorMode": "background", "graphMode": "area", "orientation": "auto" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "(avg(disk_total_bytes{job!=\"node-exporter\"}) - avg(disk_free_bytes{job!=\"node-exporter\"})) / avg(disk_total_bytes{job!=\"node-exporter\"}) * 100", "instant": true, "legendFormat": "SSD %" }]
+    },
+
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "RAM Used",
+      "description": "Available in Stage 3 (metrics-exporter service)",
+      "gridPos": { "x": 16, "y": 8, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "value", "colorMode": "none", "graphMode": "none", "orientation": "auto", "noValue": "Stage 3" },
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "mac_system_memory_used_bytes", "instant": true, "legendFormat": "RAM Used" }]
+    },
+
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "RAM Usage %",
+      "description": "Available in Stage 3 (metrics-exporter service)",
+      "gridPos": { "x": 20, "y": 8, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "value", "colorMode": "none", "graphMode": "none", "orientation": "auto", "noValue": "Stage 3" },
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "mac_system_memory_used_bytes / mac_system_memory_total_bytes * 100", "instant": true, "legendFormat": "RAM %" }]
+    },
+
+    {
+      "id": 102,
+      "type": "text",
+      "title": "",
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 2 },
+      "options": { "mode": "markdown", "content": "## Gauges" },
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    },
+
+    {
+      "id": 11,
+      "type": "gauge",
+      "title": "CPU Usage %",
+      "gridPos": { "x": 0, "y": 14, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "showThresholdLabels": true, "showThresholdMarkers": true },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 1, "min": 0, "max": 100,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 60 }, { "color": "red", "value": 85 }] },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(system_cpu_usage{job!=\"node-exporter\"}) * 100", "instant": true, "legendFormat": "CPU %" }]
+    },
+
+    {
+      "id": 12,
+      "type": "gauge",
+      "title": "SSD Usage %",
+      "gridPos": { "x": 8, "y": 14, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "showThresholdLabels": true, "showThresholdMarkers": true },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 1, "min": 0, "max": 100,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "(avg(disk_total_bytes{job!=\"node-exporter\"}) - avg(disk_free_bytes{job!=\"node-exporter\"})) / avg(disk_total_bytes{job!=\"node-exporter\"}) * 100", "instant": true, "legendFormat": "SSD %" }]
+    },
+
+    {
+      "id": 13,
+      "type": "gauge",
+      "title": "RAM Usage %",
+      "description": "Will show data after Stage 3 (metrics-exporter service)",
+      "gridPos": { "x": 16, "y": 14, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "showThresholdLabels": true, "showThresholdMarkers": true, "noValue": "Stage 3" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 1, "min": 0, "max": 100,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "mac_system_memory_used_bytes / mac_system_memory_total_bytes * 100", "instant": true, "legendFormat": "RAM %" }]
+    },
+
+    {
+      "id": 103,
+      "type": "text",
+      "title": "",
+      "gridPos": { "x": 0, "y": 21, "w": 24, "h": 2 },
+      "options": { "mode": "markdown", "content": "## Usage Over Time" },
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    },
+
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "CPU Usage Over Time",
+      "gridPos": { "x": 0, "y": 23, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 1,
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15 },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 60 }, { "color": "red", "value": 85 }] }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(system_cpu_usage{job!=\"node-exporter\"}) * 100", "legendFormat": "System CPU %" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(system_load_average_1m{job!=\"node-exporter\"})", "legendFormat": "Load Avg 1m" }
+      ]
+    },
+
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "SSD Used Over Time",
+      "gridPos": { "x": 8, "y": 23, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": { "mode": "fixed", "fixedColor": "orange" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(disk_total_bytes{job!=\"node-exporter\"}) - avg(disk_free_bytes{job!=\"node-exporter\"})", "legendFormat": "SSD Used" }
+      ]
+    },
+
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "SSD Free Over Time",
+      "gridPos": { "x": 16, "y": 23, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": { "mode": "fixed", "fixedColor": "green" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(disk_free_bytes{job!=\"node-exporter\"})", "legendFormat": "SSD Free" }
+      ]
+    }
+
+  ]
+}

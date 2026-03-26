@@ -98,6 +98,13 @@ spring:
           filters:
             - StripPrefix=1
 
+        - id: metrics-exporter
+          uri: lb://metrics-exporter
+          predicates:
+            - Path=/api/metrics/**
+          filters:
+            - StripPrefix=1
+
       globalcors:
         cors-configurations:
           '[/**]':
