@@ -9,12 +9,12 @@ global:
 
 scrape_configs:
 
-  # ── Node Exporter — VM-level OS metrics (CPU, RAM, Disk, Network) ───────────
+  # -- Node Exporter - VM-level OS metrics (CPU, RAM, Disk, Network) -----------
   - job_name: node-exporter
     static_configs:
       - targets: ['node-exporter:9100']
 
-  # ── Infrastructure services ───────────────────────────────────────────────────
+  # -- Infrastructure services ---------------------------------------------------
 
   - job_name: eureka-server
     metrics_path: /actuator/prometheus
@@ -26,7 +26,7 @@ scrape_configs:
     static_configs:
       - targets: ['host.docker.internal:8888']
 
-  # ── Stage 2: All Spring Boot services ────────────────────────────────────────
+  # -- Stage 2: All Spring Boot services ----------------------------------------
 
   - job_name: api-gateway
     metrics_path: /actuator/prometheus
@@ -88,12 +88,26 @@ scrape_configs:
     static_configs:
       - targets: ['host.docker.internal:8091']
 
+  # -- metrics-exporter: custom business metrics (orders, inventory, infra health) --
   - job_name: metrics-exporter
     metrics_path: /metrics
     static_configs:
       - targets: ['host.docker.internal:8092']
 
-  # ── Kafka Exporter — consumer lag, topic & partition metrics ──────────────
+  # -- metrics-exporter: JVM/process metrics via Spring Boot Actuator -------------
+  # Separate job because /metrics serves the isolated businessMetricsRegistry (cleared each scrape)
+  # while /actuator/prometheus serves the @Primary jvmMetricsRegistry (JVM heap, CPU, threads, uptime).
+  # relabel_configs renames the job label from 'metrics-exporter-jvm' to 'metrics-exporter' so
+  # Grafana shows ONE row for this service (not two separate rows).
+  - job_name: metrics-exporter-jvm
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8092']
+    relabel_configs:
+      - target_label: job
+        replacement: metrics-exporter
+
+  # -- Kafka Exporter - consumer lag, topic & partition metrics --------------
   - job_name: kafka-exporter
     static_configs:
       - targets: ['kafka-exporter:9308']

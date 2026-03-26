@@ -45,11 +45,15 @@ services:
       - GF_UNIFIED_ALERTING_ENABLED=true
     volumes:
       - grafana_data:/var/lib/grafana
-      # Dev: mount provisioning subdirs individually so oracle-vm-alerts.yml is excluded
+      # Dev: datasources
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      # Dev: dashboards.yml (common) + dev-dashboards.yml (Mac System Resources)
+      # prod-dashboards.yml (Oracle VM) is NOT mounted
+      - ./grafana/provisioning/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./grafana/provisioning/dashboards/dev-dashboards.yml:/etc/grafana/provisioning/dashboards/dev-dashboards.yml:ro
+      # Dev: only infra-alerts — oracle-vm-alerts.yml NOT mounted
       - ./grafana/provisioning/alerting/infra-alerts.yml:/etc/grafana/provisioning/alerting/infra-alerts.yml:ro
-      # Dev: both main dashboards and dev-only dashboards (includes Mac System Resources)
+      # Dev: common + dev dashboards only (no dashboards-prod → no Oracle VM dashboard)
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - ./grafana/dashboards-dev:/var/lib/grafana/dashboards-dev:ro
     depends_on:
@@ -65,6 +69,9 @@ services:
       - "9308:9308"
     command:
       - "--kafka.server=kafka:29092"   # internal Docker listener — avoids localhost:9092 resolution issue
+      - "--offset.show-all"            # export lag for ALL consumer groups, even when lag=0
+                                       # without this, kafka_consumergroup_lag only appears when lag>0
+                                       # causing "No data" in Grafana panels on healthy dev environments
     networks:
       - monitoring
       - backend_blinkit-network         # joins infra network so 'kafka' hostname resolves

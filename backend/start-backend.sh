@@ -161,6 +161,7 @@ start_service "config-server" "$JAR_DIR/config-server/target/config-server-1.0.0
 echo ""
 echo "── Wave 3: Business services (one by one) ─────────────────────"
 start_service "auth-service"         "$JAR_DIR/auth-service/target/auth-service-1.0.0-SNAPSHOT.jar"         8081
+start_service "metrics-exporter"     "$JAR_DIR/metrics-exporter/target/metrics-exporter-1.0.0-SNAPSHOT.jar" 8092
 start_service "user-service"         "$JAR_DIR/user-service/target/user-service-1.0.0-SNAPSHOT.jar"         8082
 start_service "notification-service" "$JAR_DIR/notification-service/target/notification-service-1.0.0-SNAPSHOT.jar" 8089
 start_service "api-gateway"          "$JAR_DIR/api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar"           8080
@@ -172,15 +173,18 @@ start_service "payment-service"      "$JAR_DIR/payment-service/target/payment-se
 start_service "order-service"        "$JAR_DIR/order-service/target/order-service-1.0.0-SNAPSHOT.jar"       8085
 start_service "delivery-service"     "$JAR_DIR/delivery-service/target/delivery-service-1.0.0-SNAPSHOT.jar" 8088
 start_service "review-service"       "$JAR_DIR/review-service/target/review-service-1.0.0-SNAPSHOT.jar"     8091
-start_service "metrics-exporter"     "$JAR_DIR/metrics-exporter/target/metrics-exporter-1.0.0-SNAPSHOT.jar" 8092
 
 # ── Done ─────────────────────────────────────────────────────────
 # Detect public IP (works on Oracle Cloud; falls back to localhost)
+# Uses || true on every step so set -e never aborts the script here.
 if [ "$PROFILE" = "prod" ]; then
   PUBLIC_IP=$(curl -s --max-time 3 http://169.254.169.254/opc/v1/vnics/ 2>/dev/null \
-    | python3 -c "import sys,json; v=json.load(sys.stdin); print(v[0].get('publicIp',''))" 2>/dev/null)
+    | python3 -c "import sys,json; v=json.load(sys.stdin); print(v[0].get('publicIp',''))" 2>/dev/null || true)
   if [ -z "$PUBLIC_IP" ]; then
-    PUBLIC_IP=$(curl -s --max-time 3 ifconfig.me 2>/dev/null || echo "YOUR_VM_IP")
+    PUBLIC_IP=$(curl -s --max-time 3 ifconfig.me 2>/dev/null || true)
+  fi
+  if [ -z "$PUBLIC_IP" ]; then
+    PUBLIC_IP="YOUR_VM_IP"
   fi
   BASE="http://$PUBLIC_IP"
 else

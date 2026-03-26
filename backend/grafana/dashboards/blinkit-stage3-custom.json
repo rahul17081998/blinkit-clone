@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 5,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -1826,7 +1826,7 @@
         ]
       },
       "gridPos": {
-        "h": 17,
+        "h": 18,
         "w": 18,
         "x": 0,
         "y": 33.2
@@ -1857,7 +1857,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(up{job!=\"node-exporter\"}) by (job)",
+          "expr": "sum(up{job!~\"node-exporter|kafka-exporter\"}) by (job)",
           "format": "table",
           "instant": true,
           "legendFormat": "{{job}}",
@@ -1868,7 +1868,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(process_cpu_usage{job!=\"node-exporter\"}) by (job) * 100",
+          "expr": "sum(process_cpu_usage{job!~\"node-exporter|kafka-exporter\"}) by (job) * 100",
           "format": "table",
           "instant": true,
           "legendFormat": "{{job}}",
@@ -1879,7 +1879,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(jvm_memory_used_bytes{job!=\"node-exporter\"}) by (job) / 1048576",
+          "expr": "sum(jvm_memory_used_bytes{job!~\"node-exporter|kafka-exporter\"}) by (job) / 1048576",
           "format": "table",
           "instant": true,
           "legendFormat": "{{job}}",
@@ -1890,7 +1890,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(jvm_memory_used_bytes{job!=\"node-exporter\", area=\"heap\"}) by (job) / 1048576",
+          "expr": "sum(jvm_memory_used_bytes{job!~\"node-exporter|kafka-exporter\", area=\"heap\"}) by (job) / 1048576",
           "format": "table",
           "instant": true,
           "legendFormat": "{{job}}",
@@ -1901,7 +1901,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max(process_uptime_seconds{job!=\"node-exporter\"}) by (job)",
+          "expr": "max(process_uptime_seconds{job!~\"node-exporter|kafka-exporter\"}) by (job)",
           "format": "table",
           "instant": true,
           "legendFormat": "{{job}}",
@@ -1912,7 +1912,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max(jvm_threads_live_threads{job!=\"node-exporter\"}) by (job)",
+          "expr": "max(jvm_threads_live_threads{job!~\"node-exporter|kafka-exporter\"}) by (job)",
           "format": "table",
           "instant": true,
           "legendFormat": "{{job}}",
@@ -2097,7 +2097,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 50.2
+        "y": 51.2
       },
       "id": 70,
       "panels": [],
@@ -2169,7 +2169,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 51.2
+        "y": 52.2
       },
       "id": 402,
       "options": {
@@ -2262,7 +2262,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 59.2
+        "y": 60.2
       },
       "id": 407,
       "options": {
@@ -2356,7 +2356,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 67.2
+        "y": 68.2
       },
       "id": 404,
       "options": {
@@ -2449,7 +2449,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 67.2
+        "y": 68.2
       },
       "id": 403,
       "options": {
@@ -2540,10 +2540,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 12,
         "x": 0,
-        "y": 75.2
+        "y": 76.2
       },
       "id": 406,
       "options": {
@@ -2641,7 +2641,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 75.2
+        "y": 76.2
       },
       "id": 405,
       "options": {
@@ -2676,7 +2676,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 83.2
+        "y": 84.2
       },
       "id": 50,
       "title": "Infrastructure Health",
@@ -2823,7 +2823,7 @@
         "h": 8,
         "w": 17,
         "x": 0,
-        "y": 84.2
+        "y": 85.2
       },
       "id": 59,
       "options": {
@@ -2902,7 +2902,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 92.2
+        "y": 93.2
       },
       "id": 75,
       "title": "MongoDB / Business Metrics",
@@ -3015,7 +3015,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 93.2
+        "y": 94.2
       },
       "id": 6,
       "options": {
@@ -3145,7 +3145,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 93.2
+        "y": 94.2
       },
       "id": 15,
       "options": {
@@ -3245,7 +3245,7 @@
         "h": 4,
         "w": 12,
         "x": 0,
-        "y": 101.2
+        "y": 102.2
       },
       "id": 21,
       "options": {
@@ -3402,7 +3402,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 101.2
+        "y": 102.2
       },
       "id": 16,
       "options": {
@@ -3487,7 +3487,7 @@
         "h": 4,
         "w": 12,
         "x": 0,
-        "y": 105.2
+        "y": 106.2
       },
       "id": 22,
       "options": {
@@ -3527,7 +3527,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 109.2
+        "y": 110.2
       },
       "id": 29,
       "options": {
@@ -3889,7 +3889,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 111.2
+        "y": 112.2
       },
       "id": 30,
       "options": {
@@ -3978,7 +3978,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 121.2
+        "y": 122.2
       },
       "id": 40,
       "options": {
@@ -4248,9 +4248,9 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 24,
+        "w": 18,
         "x": 0,
-        "y": 123.2
+        "y": 124.2
       },
       "id": 41,
       "options": {
@@ -4335,48 +4335,21 @@
       "type": "table"
     },
     {
-      "id": 80,
-      "type": "row",
-      "title": "Kafka Monitoring",
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 134
-      }
+        "y": 134.2
+      },
+      "id": 80,
+      "title": "Kafka Monitoring",
+      "type": "row"
     },
     {
-      "id": 81,
-      "type": "stat",
-      "title": "Total Consumer Lag",
-      "gridPos": {
-        "h": 4,
-        "w": 8,
-        "x": 0,
-        "y": 135
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus"
-          },
-          "expr": "sum(kafka_consumergroup_lag)",
-          "legendFormat": "Total Lag"
-        }
-      ],
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "orientation": "auto",
-        "textMode": "auto",
-        "colorMode": "background"
-      },
       "fieldConfig": {
         "defaults": {
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -4393,43 +4366,104 @@
                 "value": 100
               }
             ]
-          },
-          "mappings": []
+          }
         },
         "overrides": []
-      }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 135.2
+      },
+      "id": 81,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "expr": "sum(kafka_consumergroup_lag) or vector(0)",
+          "legendFormat": "Total Lag",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Consumer Lag",
+      "type": "stat"
     },
     {
-      "id": 82,
-      "type": "stat",
-      "title": "Topics",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
       "gridPos": {
         "h": 4,
         "w": 8,
         "x": 8,
-        "y": 135
+        "y": 135.2
       },
+      "id": 82,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus"
           },
           "expr": "count(count by (topic) (kafka_topic_partitions))",
-          "legendFormat": "Topics"
+          "legendFormat": "Topics",
+          "refId": "A"
         }
       ],
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "orientation": "auto",
-        "textMode": "auto",
-        "colorMode": "background"
-      },
+      "title": "Topics",
+      "type": "stat"
+    },
+    {
       "fieldConfig": {
         "defaults": {
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -4438,122 +4472,59 @@
                 "value": null
               }
             ]
-          },
-          "mappings": []
+          }
         },
         "overrides": []
-      }
-    },
-    {
-      "id": 83,
-      "type": "stat",
-      "title": "Consumer Groups",
+      },
       "gridPos": {
         "h": 4,
         "w": 8,
         "x": 16,
-        "y": 135
+        "y": 135.2
       },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus"
-          },
-          "expr": "count(count by (consumergroup) (kafka_consumergroup_lag))",
-          "legendFormat": "Groups"
-        }
-      ],
+      "id": 83,
       "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "fields": "",
+          "values": false
         },
-        "orientation": "auto",
+        "showPercentChange": false,
         "textMode": "auto",
-        "colorMode": "background"
+        "wideLayout": true
       },
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      }
-    },
-    {
-      "id": 84,
-      "type": "table",
-      "title": "Consumer Group Lag Details",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 139
-      },
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus"
           },
-          "expr": "kafka_consumergroup_lag",
-          "instant": true,
-          "format": "table",
-          "legendFormat": ""
+          "expr": "count(count by (consumergroup) (kafka_consumergroup_members))",
+          "legendFormat": "Groups",
+          "refId": "A"
         }
       ],
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false,
-          "reducer": [
-            "sum"
-          ]
-        }
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "instance": true,
-              "job": true
-            },
-            "indexByName": {
-              "consumergroup": 0,
-              "topic": 1,
-              "partition": 2,
-              "Value": 3
-            },
-            "renameByName": {
-              "consumergroup": "Consumer Group",
-              "topic": "Topic",
-              "partition": "Partition",
-              "Value": "Lag"
-            }
-          }
-        }
-      ],
+      "title": "Consumer Groups",
+      "type": "stat"
+    },
+    {
       "fieldConfig": {
         "defaults": {
           "custom": {
             "align": "left",
-            "filterable": true,
             "cellOptions": {
               "type": "auto"
-            }
+            },
+            "filterable": true,
+            "inspect": false
           },
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -4582,8 +4553,8 @@
               {
                 "id": "custom.cellOptions",
                 "value": {
-                  "type": "color-background",
-                  "mode": "basic"
+                  "mode": "basic",
+                  "type": "color-background"
                 }
               },
               {
@@ -4597,39 +4568,40 @@
             ]
           }
         ]
-      }
-    },
-    {
-      "id": 85,
-      "type": "table",
-      "title": "Topic Overview",
+      },
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 139
+        "x": 0,
+        "y": 139.2
       },
+      "id": 84,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus"
           },
-          "expr": "kafka_topic_partitions",
-          "instant": true,
+          "expr": "kafka_consumergroup_lag or (kafka_consumergroup_members * 0)",
           "format": "table",
-          "legendFormat": ""
+          "instant": true,
+          "legendFormat": "",
+          "refId": "A"
         }
       ],
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false,
-          "reducer": [
-            "sum"
-          ]
-        }
-      },
+      "title": "Consumer Group Lag Details",
       "transformations": [
         {
           "id": "organize",
@@ -4641,25 +4613,34 @@
               "job": true
             },
             "indexByName": {
-              "topic": 0,
-              "Value": 1
+              "Value": 3,
+              "consumergroup": 0,
+              "partition": 2,
+              "topic": 1
             },
             "renameByName": {
-              "topic": "Topic",
-              "Value": "Partitions"
+              "Value": "Lag",
+              "consumergroup": "Consumer Group",
+              "partition": "Partition",
+              "topic": "Topic"
             }
           }
         }
       ],
+      "type": "table"
+    },
+    {
       "fieldConfig": {
         "defaults": {
           "custom": {
             "align": "left",
-            "filterable": true,
             "cellOptions": {
               "type": "auto"
-            }
+            },
+            "filterable": true,
+            "inspect": false
           },
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -4671,42 +4652,102 @@
           }
         },
         "overrides": []
-      }
-    },
-    {
-      "id": 86,
-      "type": "timeseries",
-      "title": "Consumer Lag Over Time",
+      },
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 147
+        "x": 12,
+        "y": 139.2
       },
+      "id": 85,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus"
           },
-          "expr": "sum by (consumergroup, topic) (kafka_consumergroup_lag)",
-          "legendFormat": "{{consumergroup}} / {{topic}}"
+          "expr": "kafka_topic_partitions",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "A"
         }
       ],
-      "options": {
-        "tooltip": {
-          "mode": "multi"
-        },
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
+      "title": "Topic Overview",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "instance": true,
+              "job": true
+            },
+            "indexByName": {
+              "Value": 1,
+              "topic": 0
+            },
+            "renameByName": {
+              "Value": "Partitions",
+              "topic": "Topic"
+            }
+          }
         }
-      },
+      ],
+      "type": "table"
+    },
+    {
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 10
+          "color": {
+            "mode": "palette-classic"
           },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -4722,43 +4763,78 @@
           }
         },
         "overrides": []
-      }
-    },
-    {
-      "id": 87,
-      "type": "timeseries",
-      "title": "Message Production Rate (msg/s per topic)",
+      },
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 147
+        "x": 0,
+        "y": 147.2
+      },
+      "id": 86,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
       "targets": [
         {
           "datasource": {
             "type": "prometheus"
           },
-          "expr": "sum by (topic) (rate(kafka_topic_partition_current_offset[5m]))",
-          "legendFormat": "{{topic}}"
+          "expr": "sum by (consumergroup, topic) (kafka_consumergroup_lag) or sum by (consumergroup) (kafka_consumergroup_members * 0)",
+          "legendFormat": "{{consumergroup}} / {{topic}}",
+          "refId": "A"
         }
       ],
-      "options": {
-        "tooltip": {
-          "mode": "multi"
-        },
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
+      "title": "Consumer Lag Over Time",
+      "type": "timeseries"
+    },
+    {
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps",
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 10
+          "color": {
+            "mode": "palette-classic"
           },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -4767,13 +4843,45 @@
                 "value": null
               }
             ]
-          }
+          },
+          "unit": "reqps"
         },
         "overrides": []
-      }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 147.2
+      },
+      "id": 87,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "expr": "sum by (topic) (rate(kafka_topic_partition_current_offset[5m]))",
+          "legendFormat": "{{topic}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Message Production Rate (msg/s per topic)",
+      "type": "timeseries"
     }
   ],
-  "refresh": "15s",
+  "refresh": "5s",
   "schemaVersion": 39,
   "tags": [
     "blinkit",
@@ -4791,6 +4899,6 @@
   "timezone": "browser",
   "title": "Blinkit \u2014 Business & Infrastructure Metrics",
   "uid": "blinkit-stage3-custom",
-  "version": 14,
+  "version": 2,
   "weekStart": ""
 }

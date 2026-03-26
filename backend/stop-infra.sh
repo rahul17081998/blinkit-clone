@@ -28,6 +28,39 @@ else
   echo "[STOP] ✅ Docker containers stopped."
 fi
 
+# ── Step 2b: Stop monitoring stack ───────────────────────────────
+# IMPORTANT: monitoring stack must also be stopped here.
+# When docker-compose.infra.yml tears down backend_blinkit-network
+# (e.g. during a Kafka clean restart), the monitoring containers
+# (Prometheus, Grafana, kafka-exporter) lose their network connection
+# and hold stale network references. If you then bring infra back up,
+# `docker compose -f docker-compose.monitoring.yml up -d` will fail
+# with "network ... not found".
+# Solution: always stop monitoring here so it can be brought up fresh
+# after infra restarts with a new network.
+echo ""
+echo "[STOP] Stopping monitoring stack (Prometheus + Grafana + kafka-exporter)..."
+if ! docker info >/dev/null 2>&1; then
+  echo "[STOP] Docker not reachable — skipping monitoring stop."
+else
+  ENV_FILE=""
+  if [ -f "$SCRIPT_DIR/.env.prod" ]; then
+    ENV_FILE="$SCRIPT_DIR/.env.prod"
+  elif [ -f "$SCRIPT_DIR/.env.dev" ]; then
+    ENV_FILE="$SCRIPT_DIR/.env.dev"
+  fi
+
+  if [ -f "$SCRIPT_DIR/docker-compose.monitoring.yml" ]; then
+    if [ -n "$ENV_FILE" ]; then
+      set -o allexport && source "$ENV_FILE" && set +o allexport
+    fi
+    docker compose -f "$SCRIPT_DIR/docker-compose.monitoring.yml" down 2>/dev/null
+    echo "[STOP] ✅ Monitoring stack stopped."
+  else
+    echo "[STOP] docker-compose.monitoring.yml not found — skipping."
+  fi
+fi
+
 # ── Step 3: Stop Colima (macOS only) ─────────────────────────────
 if [ "$(uname -s)" = "Darwin" ] && command -v colima >/dev/null 2>&1; then
   echo ""

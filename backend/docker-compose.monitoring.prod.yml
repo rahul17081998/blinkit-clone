@@ -40,14 +40,17 @@ services:
       - GF_UNIFIED_ALERTING_ENABLED=true
     volumes:
       - grafana_data:/var/lib/grafana
-      # Prod: datasources — same as dev
+      # Prod: datasources
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
-      # Prod: only dashboards.yml — dev-dashboards.yml (Mac System Resources) NOT mounted
+      # Prod: dashboards.yml (common) + prod-dashboards.yml (Oracle VM Free Tier)
+      # dev-dashboards.yml (Mac System Resources) NOT mounted
       - ./grafana/provisioning/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
-      # Prod: full alerting directory — includes oracle-vm-alerts.yml
+      - ./grafana/provisioning/dashboards/prod-dashboards.yml:/etc/grafana/provisioning/dashboards/prod-dashboards.yml:ro
+      # Prod: full alerting — includes oracle-vm-alerts.yml
       - ./grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
-      # Prod: main dashboards only — dashboards-dev/ (Mac System Resources) NOT mounted
+      # Prod: common + prod dashboards only (no dashboards-dev → no Mac System Resources)
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./grafana/dashboards-prod:/var/lib/grafana/dashboards-prod:ro
     depends_on:
       - prometheus
     networks:
@@ -60,8 +63,13 @@ services:
     ports:
       - "9308:9308"
     command:
-      - "--kafka.server=localhost:9092"   # on Oracle VM, Kafka runs on host
-    network_mode: host                    # Kafka is on the host, not in Docker on Oracle VM
+      - "--kafka.server=kafka:29092"   # internal Docker listener — advertises 'kafka:29092' which resolves inside Docker
+      - "--offset.show-all"            # export lag for ALL consumer groups, even when lag=0
+                                       # without this, kafka_consumergroup_lag only appears when lag>0
+                                       # causing "No data" in Grafana panels on healthy environments
+    networks:
+      - monitoring                    # Prometheus can resolve kafka-exporter:9308
+      - backend_blinkit-network       # so 'kafka' hostname resolves
 
   node-exporter:
     image: prom/node-exporter:v1.7.0
@@ -88,3 +96,5 @@ volumes:
 networks:
   monitoring:
     driver: bridge
+  backend_blinkit-network:
+    external: true                     # created by docker-compose.infra.yml
