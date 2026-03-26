@@ -1,0 +1,14 @@
+apiVersion: 1
+
+# Prod-only dashboards — NOT loaded in dev.
+# Mounted only in docker-compose.monitoring.prod.yml.
+# docker-compose.monitoring.yml (dev) mounts dashboards.yml + dev-dashboards.yml only.
+
+providers:
+  - name: blinkit-prod
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards-prod
