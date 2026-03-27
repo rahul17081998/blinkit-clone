@@ -14,6 +14,8 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=15d'
       - '--web.enable-lifecycle'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # Linux fix: resolves host machine IP from inside container
     networks:
       - monitoring
 

@@ -1,0 +1,2364 @@
+{
+  "info": {
+    "name": "Blinkit Clone API",
+    "description": "All APIs for Blinkit Clone microservices backend. All requests go through API Gateway at http://localhost:8080",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "addressId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "resetToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "couponId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "transactionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "partnerId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth Service",
+      "description": "Authentication APIs \u2014 signup, login, token refresh, logout, password reset",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "signup"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Kumar\",\n  \"email\": \"rahul@example.com\",\n  \"password\": \"Test@1234\"\n}"
+            },
+            "description": "Register a new user. Sends OTP to email. No JWT required."
+          }
+        },
+        {
+          "name": "Verify Email (OTP)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify?email=rahul@example.com&otp=123456",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "verify"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "rahul@example.com"
+                },
+                {
+                  "key": "otp",
+                  "value": "123456"
+                }
+              ]
+            },
+            "description": "Verify email using OTP received after signup."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.success) {",
+                  "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+                  "  pm.collectionVariables.set('userId', json.data.userId);",
+                  "  console.log('Token saved to collection variables');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rahul2148kumar@gmail.com\",\n  \"password\": \"Stop@1213\"\n}"
+            },
+            "description": "Login and get JWT tokens. Automatically saves accessToken, refreshToken, userId to collection variables."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.success) {",
+                  "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "description": "Get a new access token using refresh token. Automatically updates accessToken variable."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Logout \u2014 blacklists access token in Redis, deletes refresh token."
+          }
+        },
+        {
+          "name": "Delete My Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/account",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "account"
+              ]
+            },
+            "description": "Hard deletes the authenticated user's own account. Publishes user.deleted Kafka event so user-service cleans up the profile. Requires valid JWT."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rahul@example.com\"\n}"
+            },
+            "description": "Sends password reset link to email."
+          }
+        },
+        {
+          "name": "Validate Reset Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password/validate/{{resetToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "reset-password",
+                "validate",
+                "{{resetToken}}"
+              ]
+            },
+            "description": "Validate a password reset token before showing reset form."
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password/{{resetToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "reset-password",
+                "{{resetToken}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPassword\": \"NewPass@1234\"\n}"
+            },
+            "description": "Reset password using the token from email link."
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Service",
+      "description": "User profile and delivery address management. All require JWT.",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "profile"
+              ]
+            },
+            "description": "Get the authenticated user's profile."
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Kumar\",\n  \"phone\": \"9876543210\",\n  \"dateOfBirth\": \"1998-08-17\",\n  \"gender\": \"MALE\"\n}"
+            },
+            "description": "Create or update user profile."
+          }
+        },
+        {
+          "name": "Get Addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "addresses"
+              ]
+            },
+            "description": "List all delivery addresses for the user."
+          }
+        },
+        {
+          "name": "Add Address",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.success) {",
+                  "  pm.collectionVariables.set('addressId', json.data.addressId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "addresses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"HOME\",\n  \"recipientName\": \"Rahul Kumar\",\n  \"recipientPhone\": \"9876543210\",\n  \"flatNo\": \"101\",\n  \"building\": \"Sunrise Apartments\",\n  \"street\": \"MG Road\",\n  \"area\": \"Koramangala\",\n  \"city\": \"Bangalore\",\n  \"state\": \"Karnataka\",\n  \"pincode\": \"560034\",\n  \"landmark\": \"Near Metro Station\",\n  \"lat\": 12.9352,\n  \"lng\": 77.6245\n}"
+            },
+            "description": "Add a new delivery address. Saves addressId to variable."
+          }
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/addresses/{{addressId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "addresses",
+                "{{addressId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"WORK\",\n  \"recipientName\": \"Rahul Kumar\",\n  \"recipientPhone\": \"9876543210\",\n  \"flatNo\": \"Floor 3\",\n  \"building\": \"Tech Park\",\n  \"street\": \"Outer Ring Road\",\n  \"area\": \"Bellandur\",\n  \"city\": \"Bangalore\",\n  \"state\": \"Karnataka\",\n  \"pincode\": \"560103\",\n  \"landmark\": \"Near Eco Space\",\n  \"lat\": 12.9279,\n  \"lng\": 77.6771\n}"
+            },
+            "description": "Update an existing address."
+          }
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/addresses/{{addressId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "addresses",
+                "{{addressId}}"
+              ]
+            },
+            "description": "Delete a delivery address."
+          }
+        },
+        {
+          "name": "Set Default Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/addresses/{{addressId}}/default",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "addresses",
+                "{{addressId}}",
+                "default"
+              ]
+            },
+            "description": "Set an address as the default delivery address."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product Service",
+      "description": "Product catalog and category management. GET endpoints are public. Admin endpoints require ADMIN role JWT.",
+      "item": [
+        {
+          "name": "Categories",
+          "item": [
+            {
+              "name": "Get All Categories",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories"
+                  ]
+                },
+                "description": "Get flat list of all categories. No JWT required."
+              }
+            },
+            {
+              "name": "Get Categories (Tree View)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories?view=tree",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories"
+                  ],
+                  "query": [
+                    {
+                      "key": "view",
+                      "value": "tree"
+                    }
+                  ]
+                },
+                "description": "Get categories as nested tree. No JWT required."
+              }
+            },
+            {
+              "name": "Create Category (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "var json = pm.response.json();",
+                      "if (json.success) {",
+                      "  pm.collectionVariables.set('categoryId', json.data.id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/admin",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "admin"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Dairy & Eggs\",\n  \"description\": \"Fresh dairy products and eggs\",\n  \"imageUrl\": \"https://example.com/dairy.jpg\"\n}"
+                },
+                "description": "Create a new category. Requires ADMIN role. Saves categoryId to variable."
+              }
+            },
+            {
+              "name": "Create Child Category (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/admin",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "admin"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Milk\",\n  \"description\": \"Fresh milk varieties\",\n  \"imageUrl\": \"https://example.com/milk.jpg\",\n  \"parentCategoryId\": \"{{categoryId}}\"\n}"
+                },
+                "description": "Create a child category under a parent."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Products",
+          "item": [
+            {
+              "name": "Get All Products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products?page=0&size=10&sortBy=createdAt",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "10"
+                    },
+                    {
+                      "key": "sortBy",
+                      "value": "createdAt"
+                    }
+                  ]
+                },
+                "description": "Get paginated product list. No JWT required."
+              }
+            },
+            {
+              "name": "Search Products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/search?q=milk",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "search"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "milk"
+                    }
+                  ]
+                },
+                "description": "Full-text search on product name and tags."
+              }
+            },
+            {
+              "name": "Get Products by Category",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/category/dairy-eggs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "category",
+                    "dairy-eggs"
+                  ]
+                },
+                "description": "Get products by category slug."
+              }
+            },
+            {
+              "name": "Get Product by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/{{productId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "{{productId}}"
+                  ]
+                },
+                "description": "Get a single product by its ID."
+              }
+            },
+            {
+              "name": "Create Product (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "var json = pm.response.json();",
+                      "if (json.success) {",
+                      "  pm.collectionVariables.set('productId', json.data.id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/admin",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "admin"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Amul Full Cream Milk 500ml\",\n  \"description\": \"Fresh full cream milk from Amul\",\n  \"slug\": \"amul-full-cream-milk-500ml\",\n  \"mrp\": 30.0,\n  \"sellingPrice\": 28.0,\n  \"categoryId\": \"{{categoryId}}\",\n  \"unit\": \"500ml\",\n  \"tags\": [\n    \"milk\",\n    \"dairy\",\n    \"amul\"\n  ],\n  \"images\": [\n    \"https://example.com/milk.jpg\"\n  ]\n}"
+                },
+                "description": "Create a new product. Requires ADMIN role. Saves productId to variable."
+              }
+            },
+            {
+              "name": "Update Product (Admin)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/admin/{{productId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "admin",
+                    "{{productId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Amul Full Cream Milk 500ml\",\n  \"description\": \"Updated description\",\n  \"slug\": \"amul-full-cream-milk-500ml\",\n  \"mrp\": 32.0,\n  \"sellingPrice\": 30.0,\n  \"categoryId\": \"{{categoryId}}\",\n  \"unit\": \"500ml\",\n  \"tags\": [\n    \"milk\",\n    \"dairy\",\n    \"amul\"\n  ],\n  \"images\": [\n    \"https://example.com/milk.jpg\"\n  ]\n}"
+                },
+                "description": "Update an existing product. Requires ADMIN role."
+              }
+            },
+            {
+              "name": "Toggle Product Active (Admin)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/admin/{{productId}}/toggle",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "admin",
+                    "{{productId}}",
+                    "toggle"
+                  ]
+                },
+                "description": "Toggle product active/inactive status. Requires ADMIN role."
+              }
+            },
+            {
+              "name": "Delete Product (Admin)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/admin/{{productId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "products",
+                    "admin",
+                    "{{productId}}"
+                  ]
+                },
+                "description": "Delete a product. Requires ADMIN role."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Inventory Service",
+      "description": "Stock management. All require JWT.",
+      "item": [
+        {
+          "name": "Get Stock by Product ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "{{productId}}"
+              ]
+            },
+            "description": "Get stock levels for a product."
+          }
+        },
+        {
+          "name": "Get All Stock (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "admin"
+              ]
+            },
+            "description": "Get stock levels for all products. Requires ADMIN role."
+          }
+        },
+        {
+          "name": "Update Stock (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/admin/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "admin",
+                "{{productId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 100\n}"
+            },
+            "description": "Set stock quantity for a product. Requires ADMIN role."
+          }
+        },
+        {
+          "name": "Reserve Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/reserve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "reserve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 2\n}"
+            },
+            "description": "Reserve stock for an order (moves available \u2192 reserved)."
+          }
+        },
+        {
+          "name": "Release Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/release",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "release"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 2\n}"
+            },
+            "description": "Release reserved stock back to available (order cancelled)."
+          }
+        },
+        {
+          "name": "Confirm Stock Deduction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 2\n}"
+            },
+            "description": "Confirm stock deduction after payment (removes from reserved)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Coupon Service",
+      "description": "Coupon management APIs \u2014 admin CRUD, public active coupons listing",
+      "item": [
+        {
+          "name": "Admin \u2014 Create Coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "coupons",
+                "admin"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAVE10\",\n  \"type\": \"PERCENT\",\n  \"value\": 10,\n  \"maxDiscount\": 50,\n  \"minOrderAmount\": 199,\n  \"usageLimit\": 100,\n  \"perUserLimit\": 3,\n  \"validFrom\": \"2026-01-01T00:00:00Z\",\n  \"validUntil\": \"2026-12-31T23:59:59Z\",\n  \"isActive\": true\n}"
+            },
+            "description": "Create a new coupon. ADMIN role required. Types: FLAT, PERCENT, FIRST_ORDER, FREE_DELIVERY. validFrom/validUntil must be ISO-8601 with Z suffix."
+          }
+        },
+        {
+          "name": "Admin \u2014 List All Coupons (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/admin?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "coupons",
+                "admin"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all coupons (paginated). ADMIN role required."
+          }
+        },
+        {
+          "name": "Admin \u2014 Get Coupon By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/admin/{{couponId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "coupons",
+                "admin",
+                "{{couponId}}"
+              ]
+            },
+            "description": "Get a single coupon by its MongoDB ID. ADMIN role required."
+          }
+        },
+        {
+          "name": "Admin \u2014 Update Coupon",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/admin/{{couponId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "coupons",
+                "admin",
+                "{{couponId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "description": "Update coupon fields (partial update supported). ADMIN role required."
+          }
+        },
+        {
+          "name": "Admin \u2014 Delete Coupon",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/admin/{{couponId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "coupons",
+                "admin",
+                "{{couponId}}"
+              ]
+            },
+            "description": "Delete a coupon by ID. ADMIN role required."
+          }
+        },
+        {
+          "name": "Admin \u2014 Get Coupon Usage Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/admin/{{couponId}}/usage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "coupons",
+                "admin",
+                "{{couponId}}",
+                "usage"
+              ]
+            },
+            "description": "Get usage stats for a coupon (totalUsed, usageLimit, remaining). ADMIN role required."
+          }
+        },
+        {
+          "name": "Public \u2014 Get Active Coupons",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "coupons",
+                "active"
+              ]
+            },
+            "description": "Get all currently active and valid coupons. No authentication required."
+          }
+        },
+        {
+          "name": "Public \u2014 Validate Coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "coupons",
+                "validate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAVE10\",\n  \"userId\": \"{{userId}}\",\n  \"cartTotal\": 300.0\n}"
+            },
+            "description": "Validates a coupon code. Note: returns a plain object (not ApiResponse wrapper): {valid, discountAmount, message, freeDelivery}. Used by cart-service internally."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart Service",
+      "description": "Cart management APIs \u2014 add/update/remove items, apply promo codes, view cart summary",
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart"
+              ]
+            },
+            "description": "Get full cart summary: items, itemsTotal, deliveryFee, couponDiscount, totalAmount. Live availability check on each item."
+          }
+        },
+        {
+          "name": "Get Cart Item Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "count"
+              ]
+            },
+            "description": "Get total number of items (sum of quantities) in cart."
+          }
+        },
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 2\n}"
+            },
+            "description": "Add a product to cart. Max 10 units per item. Price is snapshotted at add-time. Returns updated cart."
+          }
+        },
+        {
+          "name": "Update Item Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/items/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "items",
+                "{{productId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            },
+            "description": "Update quantity of an existing cart item. Set quantity=0 to remove item."
+          }
+        },
+        {
+          "name": "Remove Item from Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/items/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "items",
+                "{{productId}}"
+              ]
+            },
+            "description": "Remove a specific product from cart."
+          }
+        },
+        {
+          "name": "Apply Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/promo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "promo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAVE10\"\n}"
+            },
+            "description": "Apply a promo/coupon code to the cart. Validates minimum order amount, expiry, usage limits. Returns updated cart with discount applied."
+          }
+        },
+        {
+          "name": "Remove Promo Code",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/promo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "promo"
+              ]
+            },
+            "description": "Remove the currently applied promo code from cart."
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart"
+              ]
+            },
+            "description": "Clear all items and promo code from cart."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Checks",
+      "description": "Actuator health endpoints for all services",
+      "item": [
+        {
+          "name": "Gateway Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Auth Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8081/actuator/health"
+          }
+        },
+        {
+          "name": "User Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8082/actuator/health"
+          }
+        },
+        {
+          "name": "Product Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8083/actuator/health"
+          }
+        },
+        {
+          "name": "Inventory Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8084/actuator/health"
+          }
+        },
+        {
+          "name": "Coupon Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8090/actuator/health"
+          }
+        },
+        {
+          "name": "Cart Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8087/actuator/health"
+          }
+        },
+        {
+          "name": "Payment Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8086/actuator/health"
+          }
+        },
+        {
+          "name": "Order Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8085/actuator/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment Service",
+      "description": "Wallet & transaction APIs. All requests go through the API Gateway. Wallet is auto-created on user signup with \u20b910,000 bonus.",
+      "item": [
+        {
+          "name": "Customer \u2014 Wallet",
+          "item": [
+            {
+              "name": "Get My Wallet",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/payments/wallet",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "payments",
+                    "wallet"
+                  ]
+                },
+                "description": "Get the logged-in customer's wallet balance and details."
+              }
+            },
+            {
+              "name": "Get Transaction History",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/payments/history?page=0&size=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "payments",
+                    "history"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": "Paginated list of transactions for the logged-in user."
+              }
+            },
+            {
+              "name": "Get Single Transaction",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/payments/history/{{transactionId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "payments",
+                    "history",
+                    "{{transactionId}}"
+                  ]
+                },
+                "description": "Fetch a specific transaction by ID. Returns 403 if transaction belongs to another user."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin \u2014 Wallets",
+          "item": [
+            {
+              "name": "Get All Wallets",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/payments/admin/wallets?page=0&size=20",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "payments",
+                    "admin",
+                    "wallets"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Admin: get all user wallets paginated. Requires ADMIN role."
+              }
+            },
+            {
+              "name": "Get Wallet by User ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/payments/admin/wallets/{{userId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "payments",
+                    "admin",
+                    "wallets",
+                    "{{userId}}"
+                  ]
+                },
+                "description": "Admin: get wallet for a specific userId. Requires ADMIN role."
+              }
+            },
+            {
+              "name": "Top Up Wallet",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/payments/admin/wallets/{{userId}}/topup",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "payments",
+                    "admin",
+                    "wallets",
+                    "{{userId}}",
+                    "topup"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"amount\": 500.0,\n  \"description\": \"Admin top-up\"\n}"
+                },
+                "description": "Admin: add funds to a user wallet. Requires ADMIN role."
+              }
+            },
+            {
+              "name": "Seed Wallet (for existing users)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/payments/admin/wallets/{{userId}}/seed",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "payments",
+                    "admin",
+                    "wallets",
+                    "{{userId}}",
+                    "seed"
+                  ]
+                },
+                "description": "Admin: create a wallet with \u20b910,000 signup bonus for a user who registered before payment-service existed. Idempotent \u2014 skips if wallet already exists."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin \u2014 Transactions",
+          "item": [
+            {
+              "name": "Get All Transactions",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/payments/admin/transactions?page=0&size=20",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "payments",
+                    "admin",
+                    "transactions"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Admin: all transactions across all users, sorted by latest first. Requires ADMIN role."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Order Service",
+      "description": "Order placement, tracking, and management. Cart must have items before placing an order. Payment is debited atomically from wallet.",
+      "item": [
+        {
+          "name": "Customer \u2014 Orders",
+          "item": [
+            {
+              "name": "Place Order",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "var json = pm.response.json();",
+                      "if (json.success && json.data) {",
+                      "  pm.collectionVariables.set('orderId', json.data.orderId);",
+                      "  console.log('orderId saved: ' + json.data.orderId);",
+                      "  console.log('orderNumber: ' + json.data.orderNumber);",
+                      "  console.log('status: ' + json.data.status);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"addressId\": \"{{addressId}}\",\n  \"notes\": \"Please ring the bell\"\n}"
+                },
+                "description": "Place a new order from the current cart. Reserves stock, debits wallet atomically. Order starts as PAYMENT_PROCESSING \u2192 moves to CONFIRMED via Kafka payment.success event. Pre-requisite: add items to cart first."
+              }
+            },
+            {
+              "name": "Get My Orders",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders?page=0&size=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": "Get paginated list of orders for the logged-in user, sorted by latest first."
+              }
+            },
+            {
+              "name": "Get Order by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "{{orderId}}"
+                  ]
+                },
+                "description": "Get a specific order by orderId. Returns 404 if not found or belongs to another user."
+              }
+            },
+            {
+              "name": "Cancel Order",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/{{orderId}}/cancel",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "{{orderId}}",
+                    "cancel"
+                  ]
+                },
+                "description": "Cancel an order. Only allowed for statuses: PAYMENT_PENDING, CONFIRMED, PACKED. Triggers order.cancelled Kafka event \u2192 payment-service refunds wallet, inventory releases stock."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin \u2014 Orders",
+          "item": [
+            {
+              "name": "Get All Orders",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/admin?page=0&size=20",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "admin"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Admin: get all orders across all users, sorted by latest first. Requires ADMIN role."
+              }
+            },
+            {
+              "name": "Update Order Status",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/admin/{{orderId}}/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "admin",
+                    "{{orderId}}",
+                    "status"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"PACKED\"\n}"
+                },
+                "description": "Admin: manually update order status. Valid statuses: PAYMENT_PENDING, PAYMENT_PROCESSING, PAYMENT_FAILED, CONFIRMED, PACKED, OUT_FOR_DELIVERY, DELIVERED, CANCELLED. Requires ADMIN role."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    ,
+    {
+      "name": "Delivery Service",
+      "description": "Stage 6 — Delivery Service (port 8088). Manage delivery partners, tasks, tracking. Agent/Admin role APIs.",
+      "item": [
+        {
+          "name": "Auth — Create Delivery Agent Account (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/delivery-agent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "delivery-agent"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"agent1@blinkit.com\",\n  \"password\": \"Agent@1234\"\n}"
+            },
+            "description": "Admin-only. Creates auth credentials for a delivery agent (DELIVERY_AGENT role). No OTP — account is verified immediately. Returns userId to use when registering partner profile."
+          }
+        },
+        {
+          "name": "Partner — Register Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/partners/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "partners", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ravi Kumar\",\n  \"phone\": \"9876543210\",\n  \"vehicleType\": \"MOTORCYCLE\",\n  \"vehicleNumber\": \"KA01AB1234\"\n}"
+            },
+            "description": "Delivery agent registers their profile (name, phone, vehicle). Must be logged in as DELIVERY_AGENT. vehicleType: BICYCLE | MOTORCYCLE | SCOOTER | CAR."
+          }
+        },
+        {
+          "name": "Partner — Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/partners/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "partners", "me"]
+            },
+            "description": "Get the logged-in delivery agent's profile. Requires DELIVERY_AGENT role."
+          }
+        },
+        {
+          "name": "Partner — Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/partners/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "partners", "me"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ravi Kumar\",\n  \"phone\": \"9876543210\",\n  \"vehicleType\": \"SCOOTER\",\n  \"vehicleNumber\": \"KA01AB1234\"\n}"
+            },
+            "description": "Update partner's own profile. Requires DELIVERY_AGENT role."
+          }
+        },
+        {
+          "name": "Partner — Toggle Availability",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/partners/me/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "partners", "me", "availability"]
+            },
+            "description": "Toggle partner's availability (available/unavailable). Requires DELIVERY_AGENT role."
+          }
+        },
+        {
+          "name": "Partner — Update My Location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/partners/me/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "partners", "me", "location"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 12.9352,\n  \"lng\": 77.6245\n}"
+            },
+            "description": "Update partner's current GPS coordinates. Requires DELIVERY_AGENT role."
+          }
+        },
+        {
+          "name": "Partner — Get My Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/tasks/mine",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "tasks", "mine"]
+            },
+            "description": "Get all delivery tasks assigned to the logged-in partner. Requires DELIVERY_AGENT role."
+          }
+        },
+        {
+          "name": "Partner — Update Task Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/tasks/{{taskId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "tasks", "{{taskId}}", "status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PICKED_UP\"\n}"
+            },
+            "description": "Update task status. Valid transitions: ASSIGNED→PICKED_UP, PICKED_UP→OUT_FOR_DELIVERY, OUT_FOR_DELIVERY→DELIVERED. FAILED allowed from ASSIGNED/PICKED_UP/OUT_FOR_DELIVERY (requires failureReason). Triggers Kafka event → order-service updates order status. Requires DELIVERY_AGENT role."
+          }
+        },
+        {
+          "name": "Partner — Mark Task Failed",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/tasks/{{taskId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "tasks", "{{taskId}}", "status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"FAILED\",\n  \"failureReason\": \"Customer not available at address\"\n}"
+            },
+            "description": "Mark a task as FAILED. failureReason is required. Allowed from ASSIGNED, PICKED_UP, or OUT_FOR_DELIVERY."
+          }
+        },
+        {
+          "name": "Track — Order Delivery Status (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/track/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "track", "{{orderId}}"]
+            },
+            "description": "Track delivery status for a specific order. Any authenticated user can call this. Returns task status, partner location, store location, timestamps."
+          }
+        },
+        {
+          "name": "Admin — List All Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/admin/tasks?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "admin", "tasks"],
+              "query": [
+                { "key": "status", "value": "UNASSIGNED", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "Admin: list all delivery tasks, optionally filtered by status (UNASSIGNED, ASSIGNED, PICKED_UP, OUT_FOR_DELIVERY, DELIVERED, FAILED, CANCELLED). Paginated."
+          }
+        },
+        {
+          "name": "Admin — Get Task by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/admin/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "admin", "tasks", "{{taskId}}"]
+            },
+            "description": "Admin: get details of a specific delivery task by taskId."
+          }
+        },
+        {
+          "name": "Admin — Assign Partner to Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/admin/tasks/{{taskId}}/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "admin", "tasks", "{{taskId}}", "assign"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"partnerId\": \"<delivery-agent-userId>\",\n  \"estimatedDeliveryMinutes\": 30\n}"
+            },
+            "description": "Admin: assign a delivery partner to an UNASSIGNED task. Task moves to ASSIGNED status. estimatedDeliveryMinutes is optional."
+          }
+        },
+        {
+          "name": "Admin — List All Partners",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/admin/partners?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "admin", "partners"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "Admin: list all registered delivery partners. Paginated."
+          }
+        },
+        {
+          "name": "Admin — Get Partner by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/admin/partners/{{partnerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "admin", "partners", "{{partnerId}}"]
+            },
+            "description": "Admin: get a specific delivery partner's details by partnerId (same UUID as auth userId)."
+          }
+        },
+        {
+          "name": "Admin — Toggle Partner Active",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/admin/partners/{{partnerId}}/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "admin", "partners", "{{partnerId}}", "toggle"]
+            },
+            "description": "Admin: toggle a delivery partner's active status (activate/deactivate). Inactive partners cannot receive new tasks."
+          }
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
+}
