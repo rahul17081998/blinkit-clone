@@ -2,6 +2,7 @@ package com.blinkit.inventory.kafka;
 
 import com.blinkit.inventory.event.InventoryLowEvent;
 import com.blinkit.inventory.event.InventoryOutEvent;
+import com.blinkit.inventory.event.InventoryRestockEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -22,5 +23,10 @@ public class InventoryEventPublisher {
     public void publishInventoryOut(InventoryOutEvent event) {
         kafkaTemplate.send(InventoryOutEvent.TOPIC, event.getProductId(), event);
         log.info("Published inventory.out event for productId={}", event.getProductId());
+    }
+
+    public void publishInventoryRestock(InventoryRestockEvent event) {
+        kafkaTemplate.send(InventoryRestockEvent.TOPIC, event.getProductId(), event);
+        log.info("Published inventory.restock event for productId={}, qty={}", event.getProductId(), event.getAvailableQty());
     }
 }

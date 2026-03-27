@@ -9,6 +9,7 @@ import com.blinkit.inventory.entity.Stock;
 import com.blinkit.inventory.entity.StockMovement;
 import com.blinkit.inventory.event.InventoryLowEvent;
 import com.blinkit.inventory.event.InventoryOutEvent;
+import com.blinkit.inventory.event.InventoryRestockEvent;
 import com.blinkit.inventory.kafka.InventoryEventPublisher;
 import com.blinkit.inventory.repository.StockMovementRepository;
 import com.blinkit.inventory.repository.StockRepository;
@@ -126,6 +127,20 @@ public class InventoryService {
 
         Stock saved = stockRepository.save(stock);
         recordMovement(productId, StockMovementType.RESTOCK, req.getQuantityToAdd(), prevQty, saved.getAvailableQty(), null, req.getReason(), adminUserId);
+
+        // Publish out-of-stock event if qty dropped to 0, or restock event if qty recovered from 0
+        if (saved.getAvailableQty() == 0) {
+            eventPublisher.publishInventoryOut(InventoryOutEvent.builder()
+                    .productId(saved.getProductId())
+                    .productName(saved.getProductName())
+                    .build());
+        } else if (prevQty == 0 && saved.getAvailableQty() > 0) {
+            eventPublisher.publishInventoryRestock(InventoryRestockEvent.builder()
+                    .productId(saved.getProductId())
+                    .productName(saved.getProductName())
+                    .availableQty(saved.getAvailableQty())
+                    .build());
+        }
 
         log.info("Admin {} restocked productId={} by {}", adminUserId, productId, req.getQuantityToAdd());
         return StockResponse.from(saved);
