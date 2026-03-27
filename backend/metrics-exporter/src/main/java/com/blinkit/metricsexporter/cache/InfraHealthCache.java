@@ -245,7 +245,9 @@ public class InfraHealthCache {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private Jedis buildJedis() {
-        Jedis jedis = new Jedis(redisHost, redisPort, CONNECT_TIMEOUT);
+        // Use SSL for remote hosts (e.g. Upstash) — plain socket for localhost (dev)
+        boolean useSsl = !redisHost.equals("localhost") && !redisHost.equals("127.0.0.1");
+        Jedis jedis = new Jedis(redisHost, redisPort, CONNECT_TIMEOUT, useSsl);
         if (redisPassword != null && !redisPassword.isBlank()) {
             jedis.auth(redisPassword);
         }
