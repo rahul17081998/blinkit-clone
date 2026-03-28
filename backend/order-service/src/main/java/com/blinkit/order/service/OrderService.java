@@ -27,10 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -247,7 +244,7 @@ public class OrderService {
 
     // ── Helpers ───────────────────────────────────────────────────────
 
-    private String generateOrderNumber() {
+   /* private String generateOrderNumber() {
         String date = LocalDate.now(IST).format(DATE_FMT);
         String counterKey = "order:counter:" + date;
 
@@ -263,7 +260,24 @@ public class OrderService {
         Long seq = redisTemplate.opsForValue().increment(counterKey);
         redisTemplate.expire(counterKey, Duration.ofDays(2));
         return String.format("BLK-%s-%04d", date, seq);
+    }*/
+
+    private String generateOrderNumber() {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        String date = now.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String time = now.format(DateTimeFormatter.ofPattern("HHmmssSSS")); // milliseconds
+
+        String key = "order:counter:" + date + ":" + time;
+
+        Long seq = redisTemplate.opsForValue().increment(key);
+
+        // expire quickly since per-ms key
+        redisTemplate.expire(key, Duration.ofMinutes(2));
+
+        return String.format("BLK-%s-%s-%04d", date, time, seq);
     }
+
 
     private void rollbackReservedStock(String orderId, List<CartItemDto> items, List<String> reservedProductIds) {
         for (CartItemDto item : items) {
