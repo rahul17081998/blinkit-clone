@@ -77,10 +77,11 @@ class DeliveryTaskServiceTest {
     // ── createTask ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("createTask — creates task and auto-assigns when partner available")
+    @DisplayName("createTask — creates task and auto-assigns when queue empty and partner available")
     void createTask_withAvailablePartner() {
         when(taskRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
         when(taskRepository.save(any(DeliveryTask.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(taskRepository.existsByStatus("QUEUED")).thenReturn(false); // queue is empty
         when(partnerService.findAvailablePartner()).thenReturn(Optional.of(activePartner));
 
         taskService.createTask(ORDER_ID, USER_ID, ADDRESS_ID);
@@ -94,17 +95,36 @@ class DeliveryTaskServiceTest {
     }
 
     @Test
-    @DisplayName("createTask — leaves UNASSIGNED when no partner available")
+    @DisplayName("createTask — moves to QUEUED when queue empty but no partner available")
     void createTask_noPartnerAvailable() {
         when(taskRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
         when(taskRepository.save(any(DeliveryTask.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(taskRepository.existsByStatus("QUEUED")).thenReturn(false); // queue is empty
         when(partnerService.findAvailablePartner()).thenReturn(Optional.empty());
 
         taskService.createTask(ORDER_ID, USER_ID, ADDRESS_ID);
 
         ArgumentCaptor<DeliveryTask> captor = ArgumentCaptor.forClass(DeliveryTask.class);
-        verify(taskRepository, times(1)).save(captor.capture());
-        assertThat(captor.getValue().getStatus()).isEqualTo("UNASSIGNED");
+        verify(taskRepository, times(2)).save(captor.capture()); // once UNASSIGNED, once QUEUED
+        assertThat(captor.getValue().getStatus()).isEqualTo("QUEUED");
+        verify(eventPublisher, never()).publishStatusUpdated(any());
+    }
+
+    @Test
+    @DisplayName("createTask — goes directly to QUEUED when other orders already waiting")
+    void createTask_queueNonEmpty_skipsAssignment() {
+        when(taskRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+        when(taskRepository.save(any(DeliveryTask.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(taskRepository.existsByStatus("QUEUED")).thenReturn(true); // queue has orders
+        when(taskRepository.countByStatus("QUEUED")).thenReturn(2L);
+
+        taskService.createTask(ORDER_ID, USER_ID, ADDRESS_ID);
+
+        ArgumentCaptor<DeliveryTask> captor = ArgumentCaptor.forClass(DeliveryTask.class);
+        verify(taskRepository, times(2)).save(captor.capture()); // once UNASSIGNED, once QUEUED
+        assertThat(captor.getValue().getStatus()).isEqualTo("QUEUED");
+        // Must NOT try to find a partner — existing queued orders have priority
+        verify(partnerService, never()).findAvailablePartner();
         verify(eventPublisher, never()).publishStatusUpdated(any());
     }
 

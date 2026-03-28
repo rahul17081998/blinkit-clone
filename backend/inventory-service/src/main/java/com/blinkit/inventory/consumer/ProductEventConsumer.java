@@ -16,7 +16,7 @@ public class ProductEventConsumer {
 
     private final StockRepository stockRepository;
 
-    @Value("${inventory.low-stock-default-threshold:10}")
+    @Value("${inventory.low-stock-default-threshold}")
     private int defaultLowStockThreshold;
 
     @KafkaListener(

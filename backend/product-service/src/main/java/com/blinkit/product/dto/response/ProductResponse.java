@@ -33,6 +33,7 @@ public class ProductResponse {
     private String nutritionInfo;
     private Boolean isFeatured;
     private Boolean isAvailable;
+    private Boolean isOutOfStock;
     private Double avgRating;
     private Integer reviewCount;
     private Instant createdAt;
@@ -63,6 +64,7 @@ public class ProductResponse {
                 .nutritionInfo(p.getNutritionInfo())
                 .isFeatured(p.getIsFeatured())
                 .isAvailable(p.getIsAvailable())
+                .isOutOfStock(p.getIsOutOfStock())
                 .avgRating(p.getAvgRating())
                 .reviewCount(p.getReviewCount())
                 .createdAt(p.getCreatedAt())

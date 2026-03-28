@@ -8,7 +8,7 @@ spring:
     import:
       - optional:file:.env[.properties]
       - optional:file:../.env[.properties]
-      - configserver:http://${CONFIG_SERVER_HOST:localhost}:${CONFIG_SERVER_PORT:8888}
+      - configserver:${CONFIG_SERVER_URL}
   data:
     mongodb:
       uri: ${MONGO_URI}    # resolved from .env; database overridden by config-server

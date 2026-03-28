@@ -57,7 +57,8 @@ public class PaymentEventConsumer {
         order.setStatus(OrderStatus.CONFIRMED);
         order.setPaymentId(event.getPaymentId());
         orderRepository.save(order);
-        log.info("Order {} status set to CONFIRMED", event.getOrderId());
+        log.info("[E2E] orderId={} orderNumber={} → CONFIRMED (paymentId={})",
+                event.getOrderId(), order.getOrderNumber(), event.getPaymentId());
 
         // Confirm stock in inventory for each item
         for (OrderItem item : order.getItems()) {

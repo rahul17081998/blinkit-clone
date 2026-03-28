@@ -17,7 +17,7 @@ public class OrderInfoPayload {
 
     String orderStatus;      // PENDING | CONFIRMED | DELIVERED | CANCELLED
     String paymentStatus;    // SUCCESS | PENDING | FAILED | NO_PAYMENT
-    String deliveryStatus;   // UNASSIGNED | ASSIGNED | PICKED_UP | OUT_FOR_DELIVERY | DELIVERED | FAILED | NO_TASK
+    String deliveryStatus;   // UNASSIGNED | QUEUED | ASSIGNED | PICKED_UP | OUT_FOR_DELIVERY | DELIVERED | FAILED | CANCELLED | NO_TASK
 
     double totalAmount;
     long   deliveryMinutes;  // time from order creation → actual delivery (or → now if still ongoing)

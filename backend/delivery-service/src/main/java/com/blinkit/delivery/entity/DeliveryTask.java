@@ -31,7 +31,10 @@ public class DeliveryTask {
     private String deliveryPartnerId;  // null until assigned
 
     @Builder.Default
-    private String status = "UNASSIGNED";  // UNASSIGNED, ASSIGNED, PICKED_UP, OUT_FOR_DELIVERY, DELIVERED, FAILED, CANCELLED
+    private String status = "UNASSIGNED";  // UNASSIGNED → QUEUED → ASSIGNED → PICKED_UP → OUT_FOR_DELIVERY → DELIVERED | FAILED | CANCELLED
+    // UNASSIGNED : just created, deciding whether to assign directly or queue
+    // QUEUED     : waiting in priority queue (ordered by createdAt ASC — oldest served first)
+    // ASSIGNED   : delivery partner assigned, heading to store
 
     // Store snapshot — name & address of the dark store
     private String storeName;
@@ -46,6 +49,10 @@ public class DeliveryTask {
     private Instant estimatedDeliveryAt;
     private Instant actualPickupAt;
     private Instant actualDeliveryAt;
+
+    // Set to now + random(min,max) when entering ASSIGNED / PICKED_UP / OUT_FOR_DELIVERY.
+    // Simulation scheduler advances the task only after this time has passed.
+    private Instant nextStatusAdvanceAt;
 
     private String failureReason;
 

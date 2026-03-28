@@ -51,7 +51,7 @@ public class OrderInfoCache {
         refresh();   // populate immediately at startup so first scrape has real data
     }
 
-    @Scheduled(fixedDelay = 30_000)
+    @Scheduled(fixedDelay = 15_000)
     public void refresh() {
         try {
             ConcurrentHashMap<String, OrderInfoPayload> fresh = new ConcurrentHashMap<>();
@@ -87,13 +87,22 @@ public class OrderInfoCache {
                     deliveryMinutes = computeDeliveryMinutes(createdAt, task);
                 }
 
+                // Effective status: for in-progress orders, show the delivery task status
+                // (QUEUED / ASSIGNED / PICKED_UP / OUT_FOR_DELIVERY) so Grafana reflects
+                // real-time delivery progress instead of being stuck on CONFIRMED.
+                // Terminal/error states (CANCELLED, PAYMENT_FAILED) always use order status.
+                String effectiveStatus = orderStatus;
+                if (!isTerminalOrderStatus(orderStatus) && !"NO_TASK".equals(deliveryStatus) && !"UNKNOWN".equals(deliveryStatus)) {
+                    effectiveStatus = deliveryStatus;
+                }
+
                 String createdAtStr = createdAt != null ? FORMATTER.format(createdAt) : "unknown";
 
                 fresh.put(orderId, OrderInfoPayload.builder()
                         .orderId(orderId)
                         .orderNumber(orderNumber != null ? orderNumber : orderId)
                         .userId(userId != null ? userId : "unknown")
-                        .orderStatus(orderStatus)
+                        .orderStatus(effectiveStatus)
                         .paymentStatus(paymentStatus)
                         .deliveryStatus(deliveryStatus)
                         .totalAmount(totalAmount)
@@ -182,5 +191,16 @@ public class OrderInfoCache {
         if (value instanceof Date)  return ((Date) value).toInstant();
         if (value instanceof Instant) return (Instant) value;
         return null;
+    }
+
+    /**
+     * Terminal order statuses where delivery progression is irrelevant.
+     * For these, always show the order's own status rather than delivery status.
+     */
+    private boolean isTerminalOrderStatus(String status) {
+        return "CANCELLED".equals(status)
+                || "PAYMENT_FAILED".equals(status)
+                || "DELIVERED".equals(status)
+                || "REFUNDED".equals(status);
     }
 }

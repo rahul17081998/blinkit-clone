@@ -2195,7 +2195,7 @@
           "refId": "A"
         }
       ],
-      "title": "CPU Usage \u2014 All Services",
+      "title": "CPU Usage — All Services",
       "type": "timeseries"
     },
     {
@@ -2288,7 +2288,7 @@
           "refId": "A"
         }
       ],
-      "title": "Total RAM Used \u2014 All Services (bytes)",
+      "title": "Total RAM Used — All Services (bytes)",
       "type": "timeseries"
     },
     {
@@ -2382,7 +2382,7 @@
           "refId": "A"
         }
       ],
-      "title": "HTTP Request Rate \u2014 All Services (req/sec)",
+      "title": "HTTP Request Rate — All Services (req/sec)",
       "type": "timeseries"
     },
     {
@@ -2475,7 +2475,7 @@
           "refId": "A"
         }
       ],
-      "title": "Heap Memory \u2014 All Services",
+      "title": "Heap Memory — All Services",
       "type": "timeseries"
     },
     {
@@ -2569,7 +2569,7 @@
           "refId": "A"
         }
       ],
-      "title": "Live Threads \u2014 All Services",
+      "title": "Live Threads — All Services",
       "type": "timeseries"
     },
     {
@@ -2667,7 +2667,7 @@
           "refId": "A"
         }
       ],
-      "title": "HTTP Avg Response Time \u2014 All Services (ms)",
+      "title": "HTTP Avg Response Time — All Services (ms)",
       "type": "timeseries"
     },
     {
@@ -2909,45 +2909,13 @@
       "type": "row"
     },
     {
+      "description": "Products with quantity between 1 and 10",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -2956,111 +2924,57 @@
                 "value": null
               },
               {
+                "color": "orange",
+                "value": 1
+              },
+              {
                 "color": "red",
-                "value": 80
+                "value": 5
               }
             ]
           },
           "unit": "short"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Available"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "On Delivery"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Total"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 4,
         "w": 12,
         "x": 0,
         "y": 94.2
       },
-      "id": 6,
+      "id": 21,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "blinkit_delivery_partners_available{job=\"metrics-exporter\"}",
-          "legendFormat": "Available",
+          "expr": "blinkit_inventory_low_stock{job=\"metrics-exporter\"}",
+          "instant": true,
+          "legendFormat": "Low Stock",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "blinkit_delivery_partners_unavailable{job=\"metrics-exporter\"}",
-          "legendFormat": "On Delivery",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "blinkit_delivery_partners_total{job=\"metrics-exporter\"}",
-          "legendFormat": "Total",
-          "refId": "C"
         }
       ],
-      "title": "Delivery Partner Availability Over Time",
-      "type": "timeseries"
+      "title": "Low Stock Products",
+      "type": "stat"
     },
     {
       "fieldConfig": {
@@ -3213,7 +3127,7 @@
       "type": "piechart"
     },
     {
-      "description": "Products with quantity between 1 and 10",
+      "description": "Products with quantity = 0",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3228,12 +3142,8 @@
                 "value": null
               },
               {
-                "color": "orange",
-                "value": 1
-              },
-              {
                 "color": "red",
-                "value": 5
+                "value": 1
               }
             ]
           },
@@ -3245,9 +3155,9 @@
         "h": 4,
         "w": 12,
         "x": 0,
-        "y": 102.2
+        "y": 98.2
       },
-      "id": 21,
+      "id": 22,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
@@ -3271,14 +3181,168 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "blinkit_inventory_low_stock{job=\"metrics-exporter\"}",
+          "expr": "blinkit_inventory_out_of_stock{job=\"metrics-exporter\"}",
           "instant": true,
-          "legendFormat": "Low Stock",
+          "legendFormat": "Out of Stock",
           "refId": "A"
         }
       ],
-      "title": "Low Stock Products",
+      "title": "Out of Stock Products",
       "type": "stat"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Available"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "On Delivery"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 102.2
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "blinkit_delivery_partners_available{job=\"metrics-exporter\"}",
+          "legendFormat": "Available",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "blinkit_delivery_partners_unavailable{job=\"metrics-exporter\"}",
+          "legendFormat": "On Delivery",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "blinkit_delivery_partners_total{job=\"metrics-exporter\"}",
+          "legendFormat": "Total",
+          "refId": "C"
+        }
+      ],
+      "title": "Delivery Partner Availability Over Time",
+      "type": "timeseries"
     },
     {
       "fieldConfig": {
@@ -3457,70 +3521,6 @@
       ],
       "title": "Order Counts Over Time",
       "type": "timeseries"
-    },
-    {
-      "description": "Products with quantity = 0",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 0,
-        "y": 106.2
-      },
-      "id": 22,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "blinkit_inventory_out_of_stock{job=\"metrics-exporter\"}",
-          "instant": true,
-          "legendFormat": "Out of Stock",
-          "refId": "A"
-        }
-      ],
-      "title": "Out of Stock Products",
-      "type": "stat"
     },
     {
       "gridPos": {
@@ -3711,6 +3711,46 @@
                       }
                     },
                     "type": "value"
+                  },
+                  {
+                    "options": {
+                      "PENDING": {
+                        "color": "yellow",
+                        "index": 8,
+                        "text": "PENDING"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "QUEUED": {
+                        "color": "orange",
+                        "index": 9,
+                        "text": "QUEUED"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "ASSIGNED": {
+                        "color": "blue",
+                        "index": 10,
+                        "text": "ASSIGNED"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "PICKED_UP": {
+                        "color": "purple",
+                        "index": 11,
+                        "text": "PICKED_UP"
+                      }
+                    },
+                    "type": "value"
                   }
                 ]
               },
@@ -3796,7 +3836,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Amount (\u20b9)"
+                "value": "Amount (₹)"
               },
               {
                 "id": "custom.width",
@@ -3875,7 +3915,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Amount (\u20b9)"
+              "options": "Amount (₹)"
             },
             "properties": [
               {
@@ -3923,7 +3963,7 @@
           "refId": "A"
         }
       ],
-      "title": "Order Details \u2014 last 12 hours",
+      "title": "Order Details — last 12 hours",
       "transformations": [
         {
           "id": "labelsToFields",
@@ -3959,7 +3999,7 @@
               "payment_status": 3
             },
             "renameByName": {
-              "amount": "Amount (\u20b9)",
+              "amount": "Amount (₹)",
               "created_at": "Created At",
               "delivery_min": "Time (min)",
               "delivery_status": "Delivery Status",
@@ -3987,7 +4027,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "## Product Inventory \u2014 Needs Attention (Unavailable / Low Stock / Out of Stock)",
+        "content": "## Product Inventory — Needs Attention (Unavailable / Low Stock / Out of Stock)",
         "justifyContent": "left",
         "mode": "markdown"
       },
@@ -4284,7 +4324,7 @@
           "refId": "A"
         }
       ],
-      "title": "Product Inventory \u2014 Unavailable / Low Stock / Out of Stock",
+      "title": "Product Inventory — Unavailable / Low Stock / Out of Stock",
       "transformations": [
         {
           "id": "labelsToFields",
@@ -4881,7 +4921,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "5s",
+  "refresh": "10s",
   "schemaVersion": 39,
   "tags": [
     "blinkit",
@@ -4892,13 +4932,13 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Blinkit \u2014 Business & Infrastructure Metrics",
+  "title": "Blinkit — Business & Infrastructure Metrics",
   "uid": "blinkit-stage3-custom",
-  "version": 2,
+  "version": 13,
   "weekStart": ""
 }

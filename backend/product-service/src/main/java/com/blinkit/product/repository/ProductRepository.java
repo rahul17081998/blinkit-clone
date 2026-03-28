@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductRepository extends MongoRepository<Product, String> {
@@ -17,8 +18,10 @@ public interface ProductRepository extends MongoRepository<Product, String> {
     Page<Product> findAll(Pageable pageable);
     Page<Product> findByIsAvailableTrue(Pageable pageable);
     Page<Product> findByCategorySlugAndIsAvailableTrue(String categorySlug, Pageable pageable);
-    // Featured only shows available products
-    Page<Product> findByIsFeaturedTrueAndIsAvailableTrue(Pageable pageable);
+    // Full list variants for shuffle-then-paginate
+    List<Product> findAllByOrderByCreatedAtDesc();
+    List<Product> findByCategorySlug(String categorySlug);
+    List<Product> findByIsFeaturedTrueAndIsAvailableTrue();
 
     @Query("{ '$text': { '$search': ?0 }, 'isAvailable': true }")
     Page<Product> searchByText(String query, Pageable pageable);
