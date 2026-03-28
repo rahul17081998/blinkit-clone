@@ -16,7 +16,7 @@ public class OtpService {
     private static final String OTP_PREFIX = "otp:";
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    @Value("${otp.expiry-minutes:5}")
+    @Value("${otp.expiry-minutes}")
     private long otpExpiryMinutes;
 
     public String generateAndStore(String email) {

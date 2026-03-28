@@ -8,7 +8,7 @@ spring:
     import:
       - optional:file:.env[.properties]
       - optional:file:../.env[.properties]
-      - configserver:http://${CONFIG_SERVER_HOST:localhost}:${CONFIG_SERVER_PORT:8888}
+      - configserver:${CONFIG_SERVER_URL}
 
   # ─── Gateway Routes (kept local — gateway-specific, not shared) ───
   cloud:
@@ -113,7 +113,7 @@ spring:
               - "http://localhost:3001"
               - "http://localhost:5173"
               - "http://localhost:5174"
-              - "${FRONTEND_URL:http://localhost:5173}"
+              - "${FRONTEND_URL}"
             allowedMethods:
               - GET
               - POST
@@ -125,10 +125,10 @@ spring:
 
 # ─── Gateway-specific overrides (JWT must match auth-service) ─────
 jwt:
-  secret-key: ${JWT_SECRET_KEY:blinkit-dev-secret-key-minimum-32-chars!!}
+  secret-key: ${JWT_SECRET_KEY}
 
 internal:
-  secret-key: ${INTERNAL_SECRET:blinkit-internal-svc-secret-2026!!}
+  secret-key: ${INTERNAL_SECRET}
 
 resilience4j:
   circuitbreaker:

@@ -15,7 +15,7 @@ public class PasswordResetService {
     private final StringRedisTemplate redis;
     private static final String PREFIX = "pwd_reset:";
 
-    @Value("${password-reset.expiry-minutes:15}")
+    @Value("${password-reset.expiry-minutes}")
     private long expiryMinutes;
 
     public String generateToken(String userId) {

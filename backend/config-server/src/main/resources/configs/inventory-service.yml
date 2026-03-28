@@ -4,4 +4,4 @@ spring:
       database: inventory_db
 
 inventory:
-  low-stock-default-threshold: ${INVENTORY_LOW_STOCK_THRESHOLD:10}
+  low-stock-default-threshold: ${INVENTORY_LOW_STOCK_THRESHOLD}

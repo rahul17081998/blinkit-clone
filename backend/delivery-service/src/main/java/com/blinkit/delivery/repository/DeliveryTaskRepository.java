@@ -33,4 +33,17 @@ public interface DeliveryTaskRepository extends MongoRepository<DeliveryTask, St
 
     /** Tasks in a specific status whose updatedAt is before the given threshold — used by simulation scheduler. */
     List<DeliveryTask> findByStatusAndUpdatedAtBefore(String status, Instant before);
+
+    /** Tasks whose nextStatusAdvanceAt has passed — simulation scheduler uses this to advance status. */
+    @Query("{ 'status': ?0, 'nextStatusAdvanceAt': { $ne: null, $lte: ?1 } }")
+    List<DeliveryTask> findReadyToAdvance(String status, Instant now);
+
+    /** Priority queue: all QUEUED tasks sorted by createdAt ASC (oldest order served first). */
+    List<DeliveryTask> findAllByStatusOrderByCreatedAtAsc(String status);
+
+    /** Check if any task exists in the given status — used to decide whether new order goes directly to assignment or queue. */
+    boolean existsByStatus(String status);
+
+    /** Queue depth — count of orders currently waiting for a partner. */
+    long countByStatus(String status);
 }

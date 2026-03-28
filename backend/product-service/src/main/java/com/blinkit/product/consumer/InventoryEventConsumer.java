@@ -1,6 +1,7 @@
 package com.blinkit.product.consumer;
 
 import com.blinkit.product.event.InventoryOutEvent;
+import com.blinkit.product.event.InventoryRestockEvent;
 import com.blinkit.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +23,25 @@ public class InventoryEventConsumer {
     public void onInventoryOut(InventoryOutEvent event) {
         log.info("Received inventory.out event for productId={}", event.getProductId());
         productRepository.findByProductId(event.getProductId()).ifPresent(product -> {
-            if (Boolean.TRUE.equals(product.getIsAvailable())) {
-                product.setIsAvailable(false);
-                productRepository.save(product);
-                log.info("Marked product {} as unavailable due to out-of-stock", event.getProductId());
-            }
+            product.setIsOutOfStock(true);
+            product.setIsAvailable(false);
+            productRepository.save(product);
+            log.info("Marked product {} as out-of-stock and unavailable", event.getProductId());
+        });
+    }
+
+    @KafkaListener(
+        topics = "inventory.restock",
+        groupId = "product-service",
+        containerFactory = "inventoryRestockListenerFactory"
+    )
+    public void onInventoryRestock(InventoryRestockEvent event) {
+        log.info("Received inventory.restock event for productId={}", event.getProductId());
+        productRepository.findByProductId(event.getProductId()).ifPresent(product -> {
+            product.setIsOutOfStock(false);
+            product.setIsAvailable(true);
+            productRepository.save(product);
+            log.info("Marked product {} as in-stock and available after restock", event.getProductId());
         });
     }
 }

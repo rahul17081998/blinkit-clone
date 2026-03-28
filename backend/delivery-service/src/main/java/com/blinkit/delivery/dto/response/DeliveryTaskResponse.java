@@ -30,6 +30,7 @@ public class DeliveryTaskResponse {
     private Instant actualPickupAt;
     private Instant actualDeliveryAt;
     private String failureReason;
+    private Integer queuePosition;   // set only when status=QUEUED; 1 = next to be assigned
     private Instant createdAt;
     private Instant updatedAt;
 

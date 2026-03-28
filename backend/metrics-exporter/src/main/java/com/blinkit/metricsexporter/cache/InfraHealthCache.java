@@ -43,28 +43,28 @@ public class InfraHealthCache {
 
     private final MongoClient mongoClient;
 
-    @Value("${spring.data.redis.host:localhost}")
+    @Value("${spring.data.redis.host}")
     private String redisHost;
 
-    @Value("${spring.data.redis.port:6379}")
+    @Value("${spring.data.redis.port}")
     private int redisPort;
 
-    @Value("${spring.data.redis.password:}")
+    @Value("${spring.data.redis.password}")
     private String redisPassword;
 
-    @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
+    @Value("${spring.kafka.bootstrap-servers}")
     private String kafkaBootstrapServers;
 
-    @Value("${cloudinary.cloud-name:unknown}")
+    @Value("${cloudinary.cloud-name}")
     private String cloudinaryCloudName;
 
-    @Value("${cloudinary.api-key:}")
+    @Value("${cloudinary.api-key}")
     private String cloudinaryApiKey;
 
-    @Value("${cloudinary.api-secret:}")
+    @Value("${cloudinary.api-secret}")
     private String cloudinaryApiSecret;
 
-    @Value("${infra.health.check.interval-ms:1800000}")
+    @Value("${infra.health.check.interval-ms}")
     private long intervalMs;
 
     private static final String TEST_DB         = "infra_health_check_db";

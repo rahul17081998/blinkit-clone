@@ -36,13 +36,16 @@ public class DeliveryEventConsumer {
         Order order = optOrder.get();
         OrderStatus newStatus = mapDeliveryStatus(event.getDeliveryStatus());
         if (newStatus == null) {
-            log.info("Delivery status {} has no order status mapping — skipping", event.getDeliveryStatus());
+            log.info("[E2E] orderId={} delivery={} → no order status mapping (skipping)",
+                    event.getOrderId(), event.getDeliveryStatus());
             return;
         }
 
+        OrderStatus prevStatus = order.getStatus();
         order.setStatus(newStatus);
         orderRepository.save(order);
-        log.info("Order {} status updated to {} via delivery event", event.getOrderId(), newStatus);
+        log.info("[E2E] orderId={} order status: {} → {} (delivery: {})",
+                event.getOrderId(), prevStatus, newStatus, event.getDeliveryStatus());
     }
 
     private OrderStatus mapDeliveryStatus(String deliveryStatus) {

@@ -17,7 +17,7 @@ public class JwtUtil {
     @Value("${jwt.secret-key}")
     private String secretKey;
 
-    @Value("${jwt.expiry-minutes:15}")
+    @Value("${jwt.expiry-minutes}")
     private long expiryMinutes;
 
     public String generateAccessToken(String userId, String email, String role) {

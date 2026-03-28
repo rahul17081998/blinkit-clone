@@ -9,11 +9,11 @@ spring:
       fail-fast: false       # do not crash startup if Kafka broker is unreachable
 
 cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:unknown}
-  api-key: ${CLOUDINARY_API_KEY:}
-  api-secret: ${CLOUDINARY_API_SECRET:}
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
 
 infra:
   health:
     check:
-      interval-ms: ${INFRA_HEALTH_CHECK_INTERVAL_MS:1800000}
+      interval-ms: ${INFRA_HEALTH_CHECK_INTERVAL_MS}

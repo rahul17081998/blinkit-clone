@@ -9,11 +9,11 @@ spring:
 
 jwt:
   secret-key: ${JWT_SECRET_KEY}
-  expiry-minutes: ${JWT_EXPIRY_TIME_IN_MINUTE:15}
-  refresh-expiry-days: ${JWT_REFRESH_EXPIRY_DAYS:30}
+  expiry-minutes: ${JWT_EXPIRY_TIME_IN_MINUTE}
+  refresh-expiry-days: ${JWT_REFRESH_EXPIRY_DAYS}
 
 otp:
-  expiry-minutes: ${OTP_EXPIRY_MINUTES:5}
+  expiry-minutes: ${OTP_EXPIRY_MINUTES}
 
 password-reset:
-  expiry-minutes: ${PASSWORD_RESET_EXPIRY_MINUTES:15}
+  expiry-minutes: ${PASSWORD_RESET_EXPIRY_MINUTES}

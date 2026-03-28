@@ -64,6 +64,7 @@ public class Product {
 
     private Boolean isFeatured;
     private Boolean isAvailable;
+    private Boolean isOutOfStock;  // true when inventory qty = 0; blocks admin from toggling to available
     private Double avgRating;
     private Integer reviewCount;
     private String createdBy;

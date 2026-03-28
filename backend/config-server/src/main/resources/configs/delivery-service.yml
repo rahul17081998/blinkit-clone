@@ -7,15 +7,26 @@ spring:
 
 delivery:
   store:
-    name: ${DELIVERY_STORE_NAME:Blinkit Warehouse}
-    address: ${DELIVERY_STORE_ADDRESS:Bangalore, India}
-    lat: ${DELIVERY_STORE_LAT:12.9352}
-    lng: ${DELIVERY_STORE_LNG:77.6245}
-  cooldown-minutes: ${DELIVERY_COOLDOWN_MINUTES:5}
-  estimated-delivery-minutes: ${DELIVERY_ETA_MINUTES:30}
+    name: ${DELIVERY_STORE_NAME}
+    address: ${DELIVERY_STORE_ADDRESS}
+    lat: ${DELIVERY_STORE_LAT}
+    lng: ${DELIVERY_STORE_LNG}
+  cooldown-minutes: ${DELIVERY_COOLDOWN_MINUTES}
+  estimated-delivery-minutes: ${DELIVERY_ETA_MINUTES}
 
 scheduling:
-  retry-unassigned-delay-ms: ${SCHEDULING_RETRY_UNASSIGNED_MS:30000}
-  release-cooldown-delay-ms: ${SCHEDULING_RELEASE_COOLDOWN_MS:60000}
-  auto-complete-stale-delay-ms: ${SCHEDULING_AUTO_COMPLETE_MS:300000}
-  simulate-progress-delay-ms: ${SCHEDULING_SIMULATE_PROGRESS_MS:30000}
+  retry-unassigned-delay-ms: ${SCHEDULING_RETRY_UNASSIGNED_MS}
+  release-cooldown-delay-ms: ${SCHEDULING_RELEASE_COOLDOWN_MS}
+  auto-complete-stale-delay-ms: ${SCHEDULING_AUTO_COMPLETE_MS}
+  simulate-progress-delay-ms: ${SCHEDULING_SIMULATE_PROGRESS_MS}
+
+simulation:
+  assigned-to-picked-up:
+    min-sec: ${SIM_ASSIGNED_MIN_SEC}
+    max-sec: ${SIM_ASSIGNED_MAX_SEC}
+  picked-up-to-out-for-delivery:
+    min-sec: ${SIM_PICKED_UP_MIN_SEC}
+    max-sec: ${SIM_PICKED_UP_MAX_SEC}
+  out-for-delivery-to-delivered:
+    min-sec: ${SIM_OUT_FOR_DELIVERY_MIN_SEC}
+    max-sec: ${SIM_OUT_FOR_DELIVERY_MAX_SEC}

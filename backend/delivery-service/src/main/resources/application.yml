@@ -8,7 +8,7 @@ spring:
     import:
       - optional:file:.env[.properties]
       - optional:file:../.env[.properties]
-      - configserver:http://${CONFIG_SERVER_HOST:localhost}:${CONFIG_SERVER_PORT:8888}
+      - configserver:${CONFIG_SERVER_URL}
 
 # delivery.* config is loaded from config-server (delivery-service.yml)
 # with values sourced from env vars (DELIVERY_STORE_NAME, DELIVERY_STORE_LAT, etc.)

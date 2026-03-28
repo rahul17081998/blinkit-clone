@@ -12,14 +12,16 @@ import com.blinkit.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -155,23 +157,30 @@ public class ProductService {
     public ProductResponse toggleAvailability(String productId) {
         Product product = productRepository.findByProductId(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
-        product.setIsAvailable(!Boolean.TRUE.equals(product.getIsAvailable()));
+
+        boolean currentlyAvailable = Boolean.TRUE.equals(product.getIsAvailable());
+        // Block toggling to available when inventory stock is 0
+        if (!currentlyAvailable && Boolean.TRUE.equals(product.getIsOutOfStock())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cannot mark product as available — inventory stock is 0. Restock first.");
+        }
+
+        product.setIsAvailable(!currentlyAvailable);
         Product saved = productRepository.save(product);
         log.info("Toggled availability for product {} to {}", productId, saved.getIsAvailable());
         return ProductResponse.from(saved);
     }
 
     public Page<ProductResponse> listProducts(int page, int size, String sortBy, String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        // Return all products — unavailable ones are shown faded on the customer UI
-        return productRepository.findAll(pageable).map(ProductResponse::from);
+        List<Product> all = productRepository.findAllByOrderByCreatedAtDesc();
+        Collections.shuffle(all);
+        return toPage(all, page, size);
     }
 
     public Page<ProductResponse> listByCategory(String slug, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("sellingPrice").ascending());
-        // Return all products in category — unavailable shown faded
-        return productRepository.findByCategorySlug(slug, pageable).map(ProductResponse::from);
+        List<Product> all = productRepository.findByCategorySlug(slug);
+        Collections.shuffle(all);
+        return toPage(all, page, size);
     }
 
     public Page<ProductResponse> searchProducts(String query, int page, int size) {
@@ -187,7 +196,17 @@ public class ProductService {
     }
 
     public Page<ProductResponse> getFeaturedProducts(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return productRepository.findByIsFeaturedTrueAndIsAvailableTrue(pageable).map(ProductResponse::from);
+        List<Product> all = productRepository.findByIsFeaturedTrueAndIsAvailableTrue();
+        Collections.shuffle(all);
+        return toPage(all, page, size);
+    }
+
+    private Page<ProductResponse> toPage(List<Product> all, int page, int size) {
+        int total = all.size();
+        int from  = Math.min(page * size, total);
+        int to    = Math.min(from + size, total);
+        List<ProductResponse> slice = all.subList(from, to)
+                .stream().map(ProductResponse::from).toList();
+        return new PageImpl<>(slice, PageRequest.of(page, size), total);
     }
 }

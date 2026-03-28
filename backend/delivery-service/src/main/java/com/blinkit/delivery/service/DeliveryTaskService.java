@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -44,11 +45,29 @@ public class DeliveryTaskService {
     @Value("${delivery.store.lng}")
     private Double storeLng;
 
-    @Value("${delivery.cooldown-minutes:5}")
+    @Value("${delivery.cooldown-minutes}")
     private int cooldownMinutes;
 
-    @Value("${delivery.estimated-delivery-minutes:30}")
+    @Value("${delivery.estimated-delivery-minutes}")
     private int estimatedDeliveryMinutes;
+
+    // Simulation: random delay ranges per transition (in seconds)
+    @Value("${simulation.assigned-to-picked-up.min-sec}")
+    private int assignedMinSec;
+    @Value("${simulation.assigned-to-picked-up.max-sec}")
+    private int assignedMaxSec;
+
+    @Value("${simulation.picked-up-to-out-for-delivery.min-sec}")
+    private int pickedUpMinSec;
+    @Value("${simulation.picked-up-to-out-for-delivery.max-sec}")
+    private int pickedUpMaxSec;
+
+    @Value("${simulation.out-for-delivery-to-delivered.min-sec}")
+    private int outForDeliveryMinSec;
+    @Value("${simulation.out-for-delivery-to-delivered.max-sec}")
+    private int outForDeliveryMaxSec;
+
+    private static final Random RANDOM = new Random();
 
     // ── Called from Kafka consumer ────────────────────────────────
 
@@ -71,16 +90,42 @@ public class DeliveryTaskService {
                 .estimatedDeliveryAt(Instant.now().plusSeconds(estimatedDeliveryMinutes * 60L))
                 .build();
         taskRepository.save(task);
-        log.info("DeliveryTask created for orderId={}", orderId);
+        log.info("[E2E] orderId={} → DeliveryTask created taskId={} estimatedDeliveryAt={}",
+                orderId, task.getTaskId(), task.getEstimatedDeliveryAt());
 
-        // Immediately try to auto-assign an available partner
-        tryAutoAssign(task);
+        // If any orders are already waiting in the queue, this order must join the back of
+        // the queue immediately — do NOT attempt direct assignment (that would be unfair).
+        boolean queueHasOrders = taskRepository.existsByStatus("QUEUED");
+        if (queueHasOrders) {
+            task.setStatus("QUEUED");
+            taskRepository.save(task);
+            long queueDepth = taskRepository.countByStatus("QUEUED");
+            log.info("Queue non-empty — task {} for orderId={} moved to QUEUED (queue depth={})",
+                    task.getTaskId(), orderId, queueDepth);
+        } else {
+            // Queue is empty — try direct assignment; moves to QUEUED internally if no partner free
+            tryAutoAssign(task);
+        }
     }
 
     public void cancelTask(String orderId) {
         taskRepository.findByOrderId(orderId).ifPresent(task -> {
             if ("PICKED_UP".equals(task.getStatus()) || "OUT_FOR_DELIVERY".equals(task.getStatus())) {
                 log.warn("Cannot cancel task {} — already in transit ({})", task.getTaskId(), task.getStatus());
+                return;
+            }
+            // QUEUED tasks have no partner assigned yet — just cancel, no partner to free
+            if ("QUEUED".equals(task.getStatus())) {
+                task.setStatus("CANCELLED");
+                taskRepository.save(task);
+                log.info("Cancelled QUEUED task for orderId={}", orderId);
+                eventPublisher.publishStatusUpdated(DeliveryStatusUpdatedEvent.builder()
+                        .taskId(task.getTaskId())
+                        .orderId(orderId)
+                        .deliveryPartnerId(null)
+                        .deliveryStatus("CANCELLED")
+                        .updatedAt(Instant.now())
+                        .build());
                 return;
             }
 
@@ -136,13 +181,20 @@ public class DeliveryTaskService {
 
         if ("PICKED_UP".equals(req.getStatus())) {
             task.setActualPickupAt(Instant.now());
+            // Ensure simulation can advance this task — set timer so scheduler picks it up
+            task.setNextStatusAdvanceAt(randomAdvanceTime(pickedUpMinSec, pickedUpMaxSec));
+
+        } else if ("OUT_FOR_DELIVERY".equals(req.getStatus())) {
+            task.setNextStatusAdvanceAt(randomAdvanceTime(outForDeliveryMinSec, outForDeliveryMaxSec));
 
         } else if ("DELIVERED".equals(req.getStatus())) {
             task.setActualDeliveryAt(Instant.now());
+            task.setNextStatusAdvanceAt(null);
             applyPostDeliveryToPartner(partnerId);
 
         } else if ("FAILED".equals(req.getStatus())) {
             task.setFailureReason(req.getFailureReason());
+            task.setNextStatusAdvanceAt(null);
             // Free partner immediately on failure so they can take another task
             releasePartner(partnerId);
         }
@@ -167,6 +219,11 @@ public class DeliveryTaskService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Delivery task not found for order"));
         DeliveryTaskResponse resp = DeliveryTaskResponse.from(task);
+
+        if ("QUEUED".equals(task.getStatus())) {
+            resp.setQueuePosition(getQueuePosition(task.getTaskId()));
+        }
+
         if (task.getDeliveryPartnerId() != null) {
             try {
                 DeliveryPartner partner = partnerService.findByPartnerId(task.getDeliveryPartnerId());
@@ -238,31 +295,48 @@ public class DeliveryTaskService {
 
     // ── Called by ScheduledDeliveryJobService ─────────────────────
 
-    /** Try to assign an available partner to an UNASSIGNED task. */
+    /**
+     * Try to assign an available partner to an UNASSIGNED task.
+     * If no partner is available, moves the task to QUEUED so the scheduler
+     * can serve it in createdAt-order once a partner frees up.
+     */
     public void tryAutoAssign(DeliveryTask task) {
         if (!"UNASSIGNED".equals(task.getStatus())) return;
 
         Optional<DeliveryPartner> available = partnerService.findAvailablePartner();
         if (available.isEmpty()) {
-            log.debug("No available partner for task {} — will retry later", task.getTaskId());
+            // No partner free — move to QUEUED so the priority queue scheduler picks it up
+            task.setStatus("QUEUED");
+            taskRepository.save(task);
+            log.info("No partner available — task {} for orderId={} moved to QUEUED",
+                    task.getTaskId(), task.getOrderId());
             return;
         }
 
-        DeliveryPartner partner = available.get();
-        task.setDeliveryPartnerId(partner.getPartnerId());
-        task.setStatus("ASSIGNED");
-        taskRepository.save(task);
+        assignPartnerToTask(task, available.get());
+    }
 
-        eventPublisher.publishStatusUpdated(DeliveryStatusUpdatedEvent.builder()
-                .taskId(task.getTaskId())
-                .orderId(task.getOrderId())
-                .deliveryPartnerId(partner.getPartnerId())
-                .deliveryStatus("ASSIGNED")
-                .updatedAt(Instant.now())
-                .build());
+    /**
+     * Assign the oldest-queued task to the given partner.
+     * Called by the scheduler after acquiring an available partner.
+     */
+    public boolean assignNextQueued(DeliveryPartner partner) {
+        List<DeliveryTask> queue = taskRepository.findAllByStatusOrderByCreatedAtAsc("QUEUED");
+        if (queue.isEmpty()) return false;
 
-        log.info("Auto-assigned partner {} to task {} (orderId={})",
-                partner.getPartnerId(), task.getTaskId(), task.getOrderId());
+        DeliveryTask oldest = queue.get(0);
+        assignPartnerToTask(oldest, partner);
+        return true;
+    }
+
+    /** All QUEUED tasks sorted by createdAt ASC — used by scheduler. */
+    public List<DeliveryTask> getQueuedTasksInOrder() {
+        return taskRepository.findAllByStatusOrderByCreatedAtAsc("QUEUED");
+    }
+
+    /** Queue depth — how many orders are currently waiting for a partner. */
+    public long getQueueDepth() {
+        return taskRepository.countByStatus("QUEUED");
     }
 
     /** Auto-complete a stale in-progress task (called by scheduler after 30 min). */
@@ -283,7 +357,7 @@ public class DeliveryTaskService {
                 .updatedAt(Instant.now())
                 .build());
 
-        log.info("Auto-completed stale task {} for orderId={}", task.getTaskId(), task.getOrderId());
+        log.info("[E2E] orderId={} → taskId={} AUTO-COMPLETED (stale past ETA)", task.getOrderId(), task.getTaskId());
     }
 
     /** All UNASSIGNED tasks — for scheduler to retry assignment. */
@@ -299,6 +373,17 @@ public class DeliveryTaskService {
     /** Tasks in a given status whose updatedAt is before the threshold — used by simulation. */
     public List<DeliveryTask> getTasksByStatusUpdatedBefore(String status, Instant before) {
         return taskRepository.findByStatusAndUpdatedAtBefore(status, before);
+    }
+
+    /** Tasks whose random nextStatusAdvanceAt timer has expired — used by simulation scheduler. */
+    public List<DeliveryTask> getTasksReadyToAdvance(String status) {
+        Instant now = Instant.now();
+        List<DeliveryTask> ready = taskRepository.findReadyToAdvance(status, now);
+        long total = taskRepository.countByStatus(status);
+        if (total > 0) {
+            log.debug("Simulation check: status={} ready={}/{}", status, ready.size(), total);
+        }
+        return ready;
     }
 
     /** Simulation: force-assign a partner to an UNASSIGNED task without availability checks. */
@@ -325,8 +410,24 @@ public class DeliveryTaskService {
 
         if ("PICKED_UP".equals(newStatus)) {
             task.setActualPickupAt(Instant.now());
+            // Random delay before OUT_FOR_DELIVERY
+            Instant pickedUpAdvance = randomAdvanceTime(pickedUpMinSec, pickedUpMaxSec);
+            task.setNextStatusAdvanceAt(pickedUpAdvance);
+            log.info("Simulation: task {} PICKED_UP — nextStatusAdvanceAt={} (now={}, range={}..{}s)",
+                    task.getTaskId(), pickedUpAdvance, Instant.now(), pickedUpMinSec, pickedUpMaxSec);
+
+        } else if ("OUT_FOR_DELIVERY".equals(newStatus)) {
+            // Random delay before DELIVERED
+            Instant outAdvance = randomAdvanceTime(outForDeliveryMinSec, outForDeliveryMaxSec);
+            task.setNextStatusAdvanceAt(outAdvance);
+            log.info("Simulation: task {} OUT_FOR_DELIVERY — nextStatusAdvanceAt={} (now={}, range={}..{}s)",
+                    task.getTaskId(), outAdvance, Instant.now(), outForDeliveryMinSec, outForDeliveryMaxSec);
+
         } else if ("DELIVERED".equals(newStatus)) {
             task.setActualDeliveryAt(Instant.now());
+            task.setNextStatusAdvanceAt(null);   // terminal — no further advance
+            log.info("[E2E] orderId={} → taskId={} DELIVERED by partner={}",
+                    task.getOrderId(), task.getTaskId(), task.getDeliveryPartnerId());
             if (task.getDeliveryPartnerId() != null) {
                 applyPostDeliveryToPartner(task.getDeliveryPartnerId());
             }
@@ -347,14 +448,41 @@ public class DeliveryTaskService {
 
     // ── Private helpers ───────────────────────────────────────────
 
+    private void assignPartnerToTask(DeliveryTask task, DeliveryPartner partner) {
+        partner.setIsAvailable(false);
+        partnerService.savePartner(partner);
+
+        task.setDeliveryPartnerId(partner.getPartnerId());
+        task.setStatus("ASSIGNED");
+        // Random delay before partner picks up from store (ASSIGNED → PICKED_UP)
+        Instant nextAdvance = randomAdvanceTime(assignedMinSec, assignedMaxSec);
+        task.setNextStatusAdvanceAt(nextAdvance);
+        taskRepository.save(task);
+
+        eventPublisher.publishStatusUpdated(DeliveryStatusUpdatedEvent.builder()
+                .taskId(task.getTaskId())
+                .orderId(task.getOrderId())
+                .deliveryPartnerId(partner.getPartnerId())
+                .deliveryStatus("ASSIGNED")
+                .updatedAt(Instant.now())
+                .build());
+
+        log.info("[E2E] orderId={} → taskId={} ASSIGNED to partner={} nextAdvanceAt={} (ASSIGNED→PICKED_UP in {}..{}s)",
+                task.getOrderId(), task.getTaskId(), partner.getPartnerId(), nextAdvance, assignedMinSec, assignedMaxSec);
+    }
+
     private void applyPostDeliveryToPartner(String partnerId) {
         try {
             DeliveryPartner partner = partnerService.findByPartnerId(partnerId);
             partner.setTotalDeliveries(partner.getTotalDeliveries() + 1);
             partner.setIsAvailable(false);
-            partner.setCooldownUntil(Instant.now().plusSeconds(cooldownMinutes * 60L));
+            Instant now = Instant.now();
+            Instant cooldownUntil = now.plusSeconds(cooldownMinutes * 60L);
+            partner.setCooldownUntil(cooldownUntil);
             partnerService.savePartner(partner);
-            log.info("Partner {} cooldown set for {} min after delivery", partnerId, cooldownMinutes);
+            log.info("[E2E] Partner {} cooldown: cooldownMinutes={} now={} cooldownUntil={} (diff={}s)",
+                    partnerId, cooldownMinutes, now, cooldownUntil,
+                    cooldownUntil.getEpochSecond() - now.getEpochSecond());
         } catch (Exception e) {
             log.warn("Could not apply post-delivery state to partner {}: {}", partnerId, e.getMessage());
         }
@@ -387,5 +515,20 @@ public class DeliveryTaskService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Invalid status transition: " + current + " → " + next);
         }
+    }
+
+    /** Returns 1-based position of this task in the QUEUED list (by createdAt). 0 if not queued. */
+    public int getQueuePosition(String taskId) {
+        List<DeliveryTask> queue = taskRepository.findAllByStatusOrderByCreatedAtAsc("QUEUED");
+        for (int i = 0; i < queue.size(); i++) {
+            if (queue.get(i).getTaskId().equals(taskId)) return i + 1;
+        }
+        return 0;
+    }
+
+    /** Returns a random Instant between now+minSec and now+maxSec. */
+    private Instant randomAdvanceTime(int minSec, int maxSec) {
+        int delaySec = minSec + RANDOM.nextInt(maxSec - minSec + 1);
+        return Instant.now().plusSeconds(delaySec);
     }
 }

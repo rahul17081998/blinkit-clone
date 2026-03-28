@@ -16,7 +16,7 @@ public class TokenService {
     private static final String REFRESH_PREFIX   = "refresh:";
     private static final String BLACKLIST_PREFIX  = "blacklist:";
 
-    @Value("${jwt.refresh-expiry-days:30}")
+    @Value("${jwt.refresh-expiry-days}")
     private long refreshExpiryDays;
 
     // ── Refresh tokens ────────────────────────────────────────────
