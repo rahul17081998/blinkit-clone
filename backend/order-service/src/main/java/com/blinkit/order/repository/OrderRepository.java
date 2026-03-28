@@ -19,7 +19,4 @@ public interface OrderRepository extends MongoRepository<Order, String> {
 
     boolean existsByUserIdAndStatusAndItemsProductId(String userId, OrderStatus status, String productId);
 
-    /** Count orders whose orderNumber starts with the given date prefix, e.g. "BLK-20260323-" */
-    @Query(value = "{ 'orderNumber': { $regex: ?0 } }", count = true)
-    long countByOrderNumberStartingWith(String prefix);
-}
+    }
