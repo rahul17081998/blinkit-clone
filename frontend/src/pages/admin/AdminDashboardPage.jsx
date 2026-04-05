@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,6 +11,8 @@ import {
   CreditCard,
   MessageSquare,
   LogOut,
+  Menu,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../stores/authStore';
@@ -39,9 +42,64 @@ const NAV_ITEMS = [
   { label: 'Reviews',    path: '/admin/reviews',    icon: MessageSquare },
 ];
 
+function SidebarContent({ onNavClick, onLogout }) {
+  return (
+    <>
+      {/* Logo */}
+      <div className="h-16 flex items-center gap-2 px-5 border-b border-gray-700 flex-shrink-0">
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
+          <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span className="text-gray-900 font-black text-base">B</span>
+          </div>
+          <span className="text-base font-black text-white">Blinkit Admin</span>
+        </a>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 py-4 overflow-y-auto">
+        {NAV_ITEMS.map(({ label, path, icon: Icon, end }) => (
+          <NavLink
+            key={path}
+            to={path}
+            end={end}
+            onClick={onNavClick}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-5 py-3 mx-2 rounded-xl text-sm font-medium transition-all ${
+                isActive
+                  ? 'bg-yellow-400 text-gray-900'
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`
+            }
+          >
+            <Icon size={18} className="flex-shrink-0" />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Logout */}
+      <div className="p-4 border-t border-gray-700 flex-shrink-0">
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:bg-red-600 hover:text-white transition-all"
+        >
+          <LogOut size={18} />
+          Logout
+        </button>
+      </div>
+    </>
+  );
+}
+
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const { logout } = useAuthStore();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -52,74 +110,62 @@ export default function AdminDashboardPage() {
     navigate('/login');
   };
 
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
     <div className="min-h-screen flex bg-gray-100">
-      {/* Sidebar */}
-      <aside className="w-56 bg-gray-900 text-white flex flex-col fixed top-0 left-0 h-full z-40">
-        {/* Logo */}
-        <div className="h-16 flex items-center gap-2 px-5 border-b border-gray-700">
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-gray-900 font-black text-base">B</span>
-            </div>
-            <span className="text-base font-black text-white">Blinkit</span>
-          </a>
-        </div>
 
-        {/* Nav */}
-        <nav className="flex-1 py-4 overflow-y-auto">
-          {NAV_ITEMS.map(({ label, path, icon: Icon, end }) => (
-            <NavLink
-              key={path}
-              to={path}
-              end={end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-5 py-3 mx-2 rounded-xl text-sm font-medium transition-all ${
-                  isActive
-                    ? 'bg-yellow-400 text-gray-900'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                }`
-              }
-            >
-              <Icon size={18} />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Logout */}
-        <div className="p-4 border-t border-gray-700">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:bg-red-600 hover:text-white transition-all"
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
-        </div>
+      {/* ── Desktop sidebar (hidden on mobile) ── */}
+      <aside className="hidden md:flex w-56 bg-gray-900 text-white flex-col fixed top-0 left-0 h-full z-40">
+        <SidebarContent onNavClick={undefined} onLogout={handleLogout} />
       </aside>
 
-      {/* Main content */}
-      <div className="flex-1 ml-56 flex flex-col min-h-screen">
+      {/* ── Mobile sidebar drawer ── */}
+      {/* Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={closeSidebar}
+        />
+      )}
+      {/* Drawer */}
+      <aside
+        className={`fixed top-0 left-0 h-full w-64 bg-gray-900 text-white flex flex-col z-50 transform transition-transform duration-300 md:hidden ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Close button */}
+        <button
+          onClick={closeSidebar}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+        >
+          <X size={20} />
+        </button>
+        <SidebarContent onNavClick={closeSidebar} onLogout={handleLogout} />
+      </aside>
+
+      {/* ── Main content ── */}
+      <div className="flex-1 md:ml-56 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
+
         {/* Top header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6 sticky top-0 z-30">
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-lg font-bold text-gray-900 hover:text-yellow-500 transition-colors"
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-4 md:px-6 sticky top-0 z-30 gap-3">
+          {/* Hamburger — mobile only */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="md:hidden p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+            aria-label="Open menu"
           >
-            Blinkit
-          </a>
+            <Menu size={22} />
+          </button>
+
+          <span className="text-lg font-bold text-gray-900">
+            Blinkit Admin
+          </span>
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto w-full max-w-full">
+          <div className="w-full max-w-full overflow-x-hidden">
           <Routes>
             <Route index element={<OverviewSection />} />
             <Route path="products" element={<ProductsSection />} />
@@ -134,6 +180,7 @@ export default function AdminDashboardPage() {
             <Route path="reviews" element={<ReviewsSection />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
+          </div>
         </main>
       </div>
     </div>

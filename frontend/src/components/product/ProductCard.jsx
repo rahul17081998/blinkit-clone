@@ -68,7 +68,7 @@ export default function ProductCard({ product }) {
               onError={() => setImgFailed(true)}
             />
           ) : (
-            <span className="text-5xl">{emoji}</span>
+            <span className="text-3xl md:text-5xl">{emoji}</span>
           )}
         </div>
       </div>
@@ -81,14 +81,19 @@ export default function ProductCard({ product }) {
         </p>
       </div>
 
-      {/* Price + Add button */}
-      <div className="flex items-center justify-between gap-1 mt-auto">
-        <div>
-          <p className="text-sm font-bold text-gray-900">₹{sellingPrice}</p>
-          {mrp > sellingPrice && (
-            <p className="text-xs text-gray-400 line-through">₹{mrp}</p>
-          )}
-        </div>
+      {/* Price */}
+      <div className="min-w-0 mt-auto">
+        <p className="text-xs md:text-sm font-bold text-gray-900">₹{sellingPrice}</p>
+        {mrp > sellingPrice && (
+          <p className="text-[10px] md:text-xs text-gray-400 line-through">₹{mrp}</p>
+        )}
+      </div>
+
+      {/* Add button — full width on mobile */}
+      <div className="w-full flex md:hidden">
+        <AddToCartButton product={product} size="sm" fullWidth />
+      </div>
+      <div className="hidden md:flex justify-end">
         <AddToCartButton product={product} size="sm" />
       </div>
     </>
@@ -96,7 +101,7 @@ export default function ProductCard({ product }) {
 
   if (!isAvailable) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col gap-2 opacity-55 relative select-none">
+      <div className="bg-white rounded-2xl border border-gray-100 p-2 md:p-3 flex flex-col gap-1.5 opacity-55 relative select-none">
         <div className="absolute inset-0 rounded-2xl z-10 cursor-not-allowed" />
         <div className="absolute top-2 right-2 z-20 bg-gray-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
           Unavailable
@@ -109,7 +114,7 @@ export default function ProductCard({ product }) {
   return (
     <Link
       to={`/product/${productId}`}
-      className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col gap-2 hover:shadow-md hover:scale-105 transition-all duration-200 group"
+      className="bg-white rounded-2xl border border-gray-100 p-2 md:p-3 flex flex-col gap-1.5 hover:shadow-md hover:scale-105 transition-all duration-200 group"
     >
       {cardContent}
     </Link>
