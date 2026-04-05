@@ -161,10 +161,10 @@ export default function InventorySection() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs font-medium">
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-400 inline-block" />OK — Stock above threshold</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-orange-400 inline-block" />LOW — Below threshold</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-400 inline-block" />OUT — Out of stock</span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium">
+        <span className="flex items-center gap-1.5 whitespace-nowrap"><span className="w-3 h-3 rounded-full bg-green-400 flex-shrink-0 inline-block" />OK — Above threshold</span>
+        <span className="flex items-center gap-1.5 whitespace-nowrap"><span className="w-3 h-3 rounded-full bg-orange-400 flex-shrink-0 inline-block" />LOW — Below threshold</span>
+        <span className="flex items-center gap-1.5 whitespace-nowrap"><span className="w-3 h-3 rounded-full bg-red-400 flex-shrink-0 inline-block" />OUT — Out of stock</span>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">

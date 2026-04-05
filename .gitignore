@@ -34,5 +34,10 @@ mongodb-data/
 WORK_PROGRESS.md
 TEST_CREDENTIALS.md
 CLAUDE.md
+BLINKIT_CLONE_PLAN.md
+KNOWLEDGE_NOTES.md
+
+# PID files
 *.pids
 .pids
+*.pid

@@ -2,8 +2,8 @@ import ProductCard from './ProductCard';
 
 export default function ProductGrid({ products, loading, cols = 'default' }) {
   const gridClass = cols === 'wide'
-    ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3'
-    : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3';
+    ? 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 md:gap-3'
+    : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 md:gap-3';
 
   if (loading) {
     return (
