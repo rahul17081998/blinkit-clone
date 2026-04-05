@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, Search, MapPin, User, LogOut, Package, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../stores/authStore';
@@ -12,6 +12,10 @@ export default function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  const NO_SEARCH_PATHS = ['/orders', '/profile', '/wallet', '/cart', '/checkout'];
+  const showSearch = !NO_SEARCH_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'));
 
   const { isLoggedIn, email, role, logout } = useAuthStore();
   const profileImageUrl = useProfileStore(s => s.profileImageUrl);
@@ -69,7 +73,7 @@ export default function Header() {
         </div>
 
         {/* Search bar */}
-        <form onSubmit={handleSearch} className="flex-1 max-w-xl">
+        {showSearch && <form onSubmit={handleSearch} className="flex-1 max-w-xl">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -80,7 +84,7 @@ export default function Header() {
               className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
-        </form>
+        </form>}
 
         {/* Right actions */}
         <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
