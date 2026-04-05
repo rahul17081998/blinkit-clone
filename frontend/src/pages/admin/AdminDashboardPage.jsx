@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { NavLink, Link, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { NavLink, Link, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
@@ -105,6 +105,23 @@ export default function AdminDashboardPage() {
   const profileImageUrl = useProfileStore(s => s.profileImageUrl);
   const clearProfile = useProfileStore(s => s.clearProfile);
 
+  const { pathname } = useLocation();
+
+  const PAGE_TITLES = {
+    '/admin':            'Overview',
+    '/admin/products':   'Products',
+    '/admin/categories': 'Categories',
+    '/admin/inventory':  'Inventory',
+    '/admin/orders':     'Orders',
+    '/admin/coupons':    'Coupons',
+    '/admin/delivery':   'Delivery',
+    '/admin/payments':   'Payments',
+    '/admin/reviews':    'Reviews',
+  };
+  const pageTitle = Object.entries(PAGE_TITLES)
+    .sort((a, b) => b[0].length - a[0].length)
+    .find(([path]) => pathname === path || pathname.startsWith(path + '/'))?.[1] ?? 'Overview';
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
@@ -178,7 +195,7 @@ export default function AdminDashboardPage() {
           </button>
 
           <span className="text-lg font-bold text-gray-900 flex-1">
-            Blinkit Admin
+            {pageTitle}
           </span>
 
           {/* User profile circle */}
