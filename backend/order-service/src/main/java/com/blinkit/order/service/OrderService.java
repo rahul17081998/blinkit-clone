@@ -125,49 +125,63 @@ public class OrderService {
         orderRepository.save(order);
         log.info("Order {} created with status PAYMENT_PENDING", orderId);
 
-        // 5. Call payment-service to debit wallet
-        try {
-            PaymentApiResponse payResp = paymentClient.pay(PayRequest.builder()
-                    .orderId(orderId)
-                    .userId(userId)
-                    .addressId(req.getAddressId())
-                    .amount(cart.getTotalAmount())
-                    .description("Payment for order " + orderNumber)
-                    .build());
+        // 5. Handle payment based on payment method
+        String paymentMethod = req.getPaymentMethod();
+        if (paymentMethod == null || paymentMethod.isBlank()) {
+            paymentMethod = "WALLET";
+        }
 
-            // 6. Update status to PAYMENT_PROCESSING (will move to CONFIRMED via Kafka payment.success)
-            order.setStatus(OrderStatus.PAYMENT_PROCESSING);
-            if (payResp.getData() != null) {
-                order.setPaymentId(payResp.getData().getTransactionId());
-            }
-            orderRepository.save(order);
-            log.info("Order {} payment initiated — status: PAYMENT_PROCESSING", orderId);
+        if ("RAZORPAY".equals(paymentMethod)) {
+            // For Razorpay: keep order in PAYMENT_PENDING
+            // Frontend will call payment-service to create Razorpay order
+            // After user completes payment, payment-service will publish payment.success Kafka event
+            // which will transition order to CONFIRMED
+            log.info("Order {} created for Razorpay payment — status: PAYMENT_PENDING", orderId);
+        } else {
+            // For Wallet: call payment-service to debit wallet
+            try {
+                PaymentApiResponse payResp = paymentClient.pay(PayRequest.builder()
+                        .orderId(orderId)
+                        .userId(userId)
+                        .addressId(req.getAddressId())
+                        .amount(cart.getTotalAmount())
+                        .description("Payment for order " + orderNumber)
+                        .build());
 
-        } catch (feign.FeignException.BadRequest e) {
-            // Insufficient balance — payment-service already published payment.failed
-            // Update order status to PAYMENT_FAILED and release stock
-            order.setStatus(OrderStatus.PAYMENT_FAILED);
-            orderRepository.save(order);
-
-            for (CartItemDto item : cart.getItems()) {
-                try {
-                    inventoryClient.releaseStock(ReserveStockRequest.builder()
-                            .productId(item.getProductId())
-                            .orderId(orderId)
-                            .quantity(item.getQuantity())
-                            .build());
-                } catch (Exception ex) {
-                    log.error("Failed to release stock on payment failure for product={}", item.getProductId());
+                // Update status to PAYMENT_PROCESSING (will move to CONFIRMED via Kafka payment.success)
+                order.setStatus(OrderStatus.PAYMENT_PROCESSING);
+                if (payResp.getData() != null) {
+                    order.setPaymentId(payResp.getData().getTransactionId());
                 }
+                orderRepository.save(order);
+                log.info("Order {} payment initiated — status: PAYMENT_PROCESSING", orderId);
+
+            } catch (feign.FeignException.BadRequest e) {
+                // Insufficient balance — payment-service already published payment.failed
+                // Update order status to PAYMENT_FAILED and release stock
+                order.setStatus(OrderStatus.PAYMENT_FAILED);
+                orderRepository.save(order);
+
+                for (CartItemDto item : cart.getItems()) {
+                    try {
+                        inventoryClient.releaseStock(ReserveStockRequest.builder()
+                                .productId(item.getProductId())
+                                .orderId(orderId)
+                                .quantity(item.getQuantity())
+                                .build());
+                    } catch (Exception ex) {
+                        log.error("Failed to release stock on payment failure for product={}", item.getProductId());
+                    }
+                }
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Payment failed: Insufficient wallet balance");
+            } catch (Exception e) {
+                log.error("Payment service error for orderId={}: {}", orderId, e.getMessage(), e);
+                order.setStatus(OrderStatus.PAYMENT_FAILED);
+                orderRepository.save(order);
+                rollbackReservedStock(orderId, cart.getItems(), reservedProducts);
+                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Payment service unavailable");
             }
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Payment failed: Insufficient wallet balance");
-        } catch (Exception e) {
-            log.error("Payment service error for orderId={}: {}", orderId, e.getMessage(), e);
-            order.setStatus(OrderStatus.PAYMENT_FAILED);
-            orderRepository.save(order);
-            rollbackReservedStock(orderId, cart.getItems(), reservedProducts);
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Payment service unavailable");
         }
 
         return toOrderResponse(order);

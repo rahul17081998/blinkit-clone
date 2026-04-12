@@ -46,4 +46,7 @@ export const adminApi = {
   // Reviews
   getAllReviews: (params) => api.get('/api/reviews/admin/all', { params }),
   deleteReview: (reviewId) => api.delete(`/api/reviews/${reviewId}`),
+  // Payment Methods
+  getPaymentMethods: () => api.get('/api/payments/admin/methods'),
+  togglePaymentMethod: (methodId) => api.put(`/api/payments/admin/methods/${methodId}/toggle`),
 };

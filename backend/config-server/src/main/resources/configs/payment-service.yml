@@ -4,3 +4,7 @@ spring:
       uri: ${MONGO_URI}
       database: payment_db
       auto-index-creation: true
+
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:rzp_test_ScSeFDxycjgE5b}
+  key-secret: ${RAZORPAY_KEY_SECRET:6w7qBCsV0JEP6tQWmf4AzFym}
