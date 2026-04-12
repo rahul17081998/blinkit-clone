@@ -47,7 +47,8 @@ public class PaymentEventConsumer {
         }
 
         Order order = optOrder.get();
-        if (order.getStatus() != OrderStatus.PAYMENT_PROCESSING) {
+        if (order.getStatus() != OrderStatus.PAYMENT_PROCESSING &&
+            order.getStatus() != OrderStatus.PAYMENT_PENDING) {
             log.warn("Order {} is in status {} — skipping payment.success processing",
                     event.getOrderId(), order.getStatus());
             return;
