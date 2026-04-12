@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CreditCard, X } from 'lucide-react';
+import { CreditCard, X, ToggleLeft, ToggleRight, Wallet, ShieldCheck, ShieldOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../../api/admin.api';
 
@@ -331,6 +331,125 @@ function TransactionsTab() {
   );
 }
 
+// ── Payment Methods Tab ───────────────────────────────────────────────────────
+function PaymentMethodsTab() {
+  const [methods, setMethods]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [toggling, setToggling] = useState(null);
+
+  useEffect(() => { loadMethods(); }, []);
+
+  const loadMethods = async () => {
+    setLoading(true);
+    try {
+      const res = await adminApi.getPaymentMethods();
+      setMethods(res.data?.data || []);
+    } catch {
+      toast.error('Failed to load payment methods');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggle = async (methodId) => {
+    setToggling(methodId);
+    try {
+      const res = await adminApi.togglePaymentMethod(methodId);
+      const updated = res.data?.data;
+      setMethods(prev => prev.map(m => m.methodId === methodId ? { ...m, enabled: updated.enabled } : m));
+      toast.success(`${updated.displayName} ${updated.enabled ? 'enabled' : 'disabled'}`);
+    } catch {
+      toast.error('Failed to update payment method');
+    } finally {
+      setToggling(null);
+    }
+  };
+
+  const ICON_MAP = {
+    WALLET: <Wallet size={20} className="text-yellow-500" />,
+    CARD:   <CreditCard size={20} className="text-blue-500" />,
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1,2].map(i => <div key={i} className="h-24 bg-white rounded-2xl animate-pulse" />)}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500">
+        Enable or disable payment methods. Customers only see enabled methods at checkout.
+      </p>
+
+      {methods.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 text-center text-gray-400">
+          <CreditCard size={40} className="mx-auto mb-3 opacity-30" />
+          <p className="font-medium">No payment methods configured</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {methods.map(method => (
+            <div
+              key={method.methodId}
+              className={`bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-opacity ${!method.enabled ? 'opacity-60' : ''}`}
+            >
+              {/* Icon */}
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${method.iconType === 'WALLET' ? 'bg-yellow-100' : 'bg-blue-50'}`}>
+                {ICON_MAP[method.iconType] || <CreditCard size={20} className="text-gray-400" />}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-gray-900">{method.displayName}</p>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${method.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {method.enabled ? 'Active' : 'Disabled'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">{method.description}</p>
+                <p className="text-xs text-gray-400 mt-0.5">ID: {method.methodId} · Order: {method.displayOrder}</p>
+              </div>
+
+              {/* Toggle */}
+              <button
+                onClick={() => handleToggle(method.methodId)}
+                disabled={toggling === method.methodId}
+                className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 border border-gray-200 hover:bg-gray-50"
+              >
+                {toggling === method.methodId ? (
+                  <span className="text-gray-400">...</span>
+                ) : method.enabled ? (
+                  <>
+                    <ShieldOff size={15} className="text-red-400" />
+                    <span className="text-red-500 hidden sm:inline">Disable</span>
+                    <ToggleRight size={20} className="text-green-500" />
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck size={15} className="text-green-500" />
+                    <span className="text-green-600 hidden sm:inline">Enable</span>
+                    <ToggleLeft size={20} className="text-gray-400" />
+                  </>
+                )}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+        <p className="text-xs text-yellow-700 font-medium">
+          💡 Disabling a method takes effect immediately. Customers in the middle of checkout will see the updated list on their next visit.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Main PaymentsSection ──────────────────────────────────────────────────────
 export default function PaymentsSection() {
   const [activeTab, setActiveTab] = useState('wallets');
 
@@ -338,14 +457,15 @@ export default function PaymentsSection() {
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-bold text-gray-900">Payments</h2>
-        <p className="text-sm text-gray-500">Manage wallets and transaction history</p>
+        <p className="text-sm text-gray-500">Manage wallets, transactions, and payment methods</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit flex-wrap">
         {[
-          { key: 'wallets', label: 'Wallets' },
-          { key: 'transactions', label: 'Transactions' },
+          { key: 'wallets',        label: 'Wallets' },
+          { key: 'transactions',   label: 'Transactions' },
+          { key: 'methods',        label: 'Payment Methods' },
         ].map(tab => (
           <button
             key={tab.key}
@@ -361,7 +481,9 @@ export default function PaymentsSection() {
         ))}
       </div>
 
-      {activeTab === 'wallets' ? <WalletsTab /> : <TransactionsTab />}
+      {activeTab === 'wallets'      && <WalletsTab />}
+      {activeTab === 'transactions' && <TransactionsTab />}
+      {activeTab === 'methods'      && <PaymentMethodsTab />}
     </div>
   );
 }
