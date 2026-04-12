@@ -17,8 +17,7 @@ public class RazorpayVerifyRequest {
     @NotBlank(message = "orderId is required")
     private String orderId;           // our internal orderId
 
-    @NotBlank(message = "userId is required")
-    private String userId;
+    private String userId;  // injected by gateway via X-User-Id header — not required in body
 
     private String addressId;
 
