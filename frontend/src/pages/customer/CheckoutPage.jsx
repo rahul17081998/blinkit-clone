@@ -245,17 +245,26 @@ export default function CheckoutPage() {
 
   const loadPaymentMethods = async () => {
     try {
-      const res = await paymentApi.getMethods();
-      const data = res.data?.data;
-      const methods = data?.methods || [];
-      const balance = data?.walletBalance ?? null;
+      const [methodsRes, walletRes] = await Promise.allSettled([
+        paymentApi.getMethods(),
+        paymentApi.getWallet(),
+      ]);
+
+      const methods = methodsRes.status === 'fulfilled'
+        ? (methodsRes.value.data?.data?.methods || [])
+        : [];
+
+      const balance = walletRes.status === 'fulfilled'
+        ? (walletRes.value.data?.data?.balance ?? 0)
+        : 0;
+
       setPaymentMethods(methods);
       setWalletBalance(balance);
 
       // Auto-select: prefer wallet if sufficient, else first available method
       if (methods.length > 0) {
         const walletMethod = methods.find(m => m.methodId === 'WALLET');
-        const walletSufficient = walletMethod && (balance === null || balance >= total);
+        const walletSufficient = walletMethod && balance >= total;
         if (walletSufficient) {
           setSelectedMethod('WALLET');
         } else {
